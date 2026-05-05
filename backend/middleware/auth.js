@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
 import 'dotenv/config';
-import User from '../models/User.js'; // adjust path if your model file is named/placed differently
+import User from '../models/User.js';
 
 export const auth = async (req, res, next) => {
     const authHeader = req.header('Authorization') || req.header('authorization');
@@ -28,34 +28,16 @@ export const optionalAuth = async (req, res, next) => {
     try {
         req.user = null;
         const authHeader = req.header('Authorization') || req.header('authorization');
+        const token = authHeader?.replace('Bearer ', '');
 
-        console.log("--- DEBUG OPTIONAL AUTH ---");
-        console.log("1. Auth Header:", authHeader);
+        if (!token) return next();
 
-        const token = authHeader && authHeader.split(' ')[1];
-        if (!token) {
-            console.log("2. Không tìm thấy token -> Guest");
-            return next();
-        }
-
-        console.log("2. Token tìm thấy:", token);
-        console.log("3. Secret dùng để verify:", process.env.JWT_SECRET); // Kiểm tra xem biến này có bị undefined không?
-
-        // Verify Token
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        console.log("4. Decoded:", decoded);
-
         const user = await User.findByPk(decoded.user_id);
-        if (user) {
-            console.log("5. User found in DB:", user.email);
-            req.user = decoded;
-        } else {
-            console.log("5. User ID trong token không tồn tại trong DB");
-        }
+        if (user) req.user = decoded;
 
         next();
     } catch (err) {
-        console.log("❌ LỖI AUTH:", err.message);
         req.user = null;
         next();
     }

@@ -1,97 +1,91 @@
 // controllers/cartController.js
 import CartItem from '../models/CartItem.js';
 import Book from '../models/Book.js';
-import User from '../models/User.js';
 import Author from '../models/Author.js';
 
-// === THÊM SÁCH VÀO GIỎ HÀNG ===
 const addToCart = async (req, res) => {
     const { book_id, quantity = 1 } = req.body;
     const userId = req.user.user_id;
+    const requestedQuantity = Number(quantity);
+
+    if (!Number.isInteger(requestedQuantity) || requestedQuantity <= 0) {
+        return res.error('So luong khong hop le', 400);
+    }
 
     try {
-        // Kiểm tra sách tồn tại
         const book = await Book.findByPk(book_id);
-        if (!book) return res.error('Sách không tồn tại', 404);
+        if (!book) return res.error('Sach khong ton tai', 404);
 
-        // Kiểm tra số lượng tồn kho
-        if (book.stock < quantity) return res.error('Số lượng trong kho không đủ', 400);
-
-        // Tìm hoặc tạo cart item
         let cartItem = await CartItem.findOne({ where: { user_id: userId, book_id } });
+        const newQuantity = (cartItem?.quantity || 0) + requestedQuantity;
+
+        if (book.stock < newQuantity) return res.error('So luong trong kho khong du', 400);
 
         if (cartItem) {
-            cartItem.quantity += quantity;
+            cartItem.quantity = newQuantity;
             await cartItem.save();
         } else {
-            cartItem = await CartItem.create({ user_id: userId, book_id, quantity });
+            cartItem = await CartItem.create({ user_id: userId, book_id, quantity: requestedQuantity });
         }
 
-        // Load lại book info để trả về
         await cartItem.reload({ include: [{ model: Book, attributes: ['title', 'price', 'cover_image'] }] });
 
-        res.success(cartItem, 'Thêm vào giỏ hàng thành công', 201);
+        res.success(cartItem, 'Them vao gio hang thanh cong', 201);
     } catch (err) {
-        console.error('Lỗi thêm vào giỏ:', err);
-        res.error('Lỗi server', 500);
+        console.error('Loi them vao gio:', err);
+        res.error('Loi server', 500);
     }
 };
 
-import cartController from '../controllers/cartController.js'; // Nếu cần gọi lại getCart
-
-// ... các hàm khác giữ nguyên
-
-// === CẬP NHẬT SỐ LƯỢNG ===
 const updateCart = async (req, res) => {
     const { book_id, quantity } = req.body;
     const userId = req.user.user_id;
+    const requestedQuantity = Number(quantity);
 
-    if (!quantity || quantity < 0) return res.error('Số lượng không hợp lệ', 400);
+    if (!Number.isInteger(requestedQuantity) || requestedQuantity < 0) {
+        return res.error('So luong khong hop le', 400);
+    }
 
     try {
         const cartItem = await CartItem.findOne({ where: { user_id: userId, book_id } });
-        if (!cartItem) return res.error('Không tìm thấy sản phẩm trong giỏ hàng', 404);
+        if (!cartItem) return res.error('Khong tim thay san pham trong gio hang', 404);
 
         const book = await Book.findByPk(book_id);
-        if (!book) return res.error('Sách không tồn tại', 404);
+        if (!book) return res.error('Sach khong ton tai', 404);
 
-        if (quantity > book.stock) return res.error('Số lượng vượt quá tồn kho', 400);
+        if (requestedQuantity > book.stock) return res.error('So luong vuot qua ton kho', 400);
 
-        if (quantity === 0) {
+        if (requestedQuantity === 0) {
             await cartItem.destroy();
         } else {
-            cartItem.quantity = quantity;
+            cartItem.quantity = requestedQuantity;
             await cartItem.save();
         }
 
-        // DÙNG LUÔN getCart() ĐỂ TRẢ VỀ FULL CART SAU KHI CẬP NHẬT
-        return getCart(req, res); // <-- Quan trọng: gọi lại getCart
+        return getCart(req, res);
     } catch (err) {
-        console.error('Lỗi cập nhật giỏ hàng:', err);
-        res.error('Lỗi server', 500);
+        console.error('Loi cap nhat gio hang:', err);
+        res.error('Loi server', 500);
     }
 };
 
-// === XÓA SẢN PHẨM ===
 const removeFromCart = async (req, res) => {
     const { book_id } = req.params;
     const userId = req.user.user_id;
 
     try {
         const cartItem = await CartItem.findOne({ where: { user_id: userId, book_id } });
-        if (!cartItem) return res.error('Không tìm thấy sản phẩm trong giỏ hàng', 404);
+        if (!cartItem) return res.error('Khong tim thay san pham trong gio hang', 404);
 
         await cartItem.destroy();
 
-        // DÙNG LUÔN getCart() ĐỂ TRẢ VỀ GIỎ HÀNG MỚI
-        return getCart(req, res); // <-- Gọi lại getCart
+        return getCart(req, res);
     } catch (err) {
-        console.error('Lỗi xóa giỏ hàng:', err);
-        res.error('Lỗi server', 500);
+        console.error('Loi xoa gio hang:', err);
+        res.error('Loi server', 500);
     }
 };
 
-// === LẤY GIỎ HÀNG ===
 const getCart = async (req, res) => {
     const userId = req.user.user_id;
 
@@ -114,7 +108,6 @@ const getCart = async (req, res) => {
             order: [['createdAt', 'DESC']]
         });
 
-        // Tính tổng tiền
         const total = cartItems.reduce((sum, item) => sum + item.quantity * Number(item.Book.price), 0);
 
         const result = {
@@ -126,16 +119,16 @@ const getCart = async (req, res) => {
                 price: Number(item.Book.price),
                 stock: item.Book.stock,
                 quantity: item.quantity,
-                authors: item.Book.Authors?.map(a => a.name).join(', ') || 'Không rõ tác giả' // ← THÊM TRƯỜNG NÀY
+                authors: item.Book.Authors?.map(a => a.name).join(', ') || 'Khong ro tac gia'
             })),
             total_items: cartItems.length,
             total_price: Number(total)
         };
 
-        res.success(result, 'Lấy giỏ hàng thành công');
+        res.success(result, 'Lay gio hang thanh cong');
     } catch (err) {
-        console.error('Lỗi lấy giỏ hàng:', err);
-        res.error('Lỗi server', 500);
+        console.error('Loi lay gio hang:', err);
+        res.error('Loi server', 500);
     }
 };
 

@@ -9,7 +9,6 @@ import Crypto from 'crypto';
 import 'dotenv/config';
 import { Op } from 'sequelize';
 import { ACCESS_TOKEN_TTL, REFRESH_TOKEN_TTL } from '../constants/auth.js';
-import { log } from 'console';
 // 1. THÊM CÁC IMPORT NÀY (để xử lý file và upload)
 import cloudinary from '../cloudinary.js';
 import multer from 'multer';
@@ -20,6 +19,13 @@ import fs from 'fs';
 import os from 'os';
 const upload = multer({ dest: os.tmpdir() });
 const uploadAvatar = upload.single('avatar'); // 'avatar' là tên key mà frontend gửi lên
+
+const isProduction = process.env.NODE_ENV === 'production';
+const refreshCookieOptions = {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: isProduction ? 'none' : 'lax',
+};
 
 
 // === LOGIN ===
@@ -46,9 +52,7 @@ const login = async (req, res) => {
         });
 
         res.cookie('refreshToken', refreshToken, {
-            httpOnly: true,
-            secure: true,
-            sameSite: 'none',
+            ...refreshCookieOptions,
             maxAge: REFRESH_TOKEN_TTL
         });
 
@@ -89,9 +93,7 @@ const signOut = async (req, res) => {
         if (refreshToken) {
             await Session.destroy({ where: { refresh_token: refreshToken } });
             res.clearCookie('refreshToken', {
-                httpOnly: true,
-                secure: true,
-                sameSite: 'none'
+                ...refreshCookieOptions
             });
         }
         res.success(null, 'Đăng xuất thành công', 200);
