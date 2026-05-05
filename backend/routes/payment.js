@@ -3,12 +3,9 @@ import express from 'express';
 const router = express.Router();
 import paymentController from '../controllers/paymentController.js';
 import { auth } from '../middleware/auth.js';
+import asyncHandler from '../utils/asyncHandler.js';
 
-// Tạo URL thanh toán VNPay (yêu cầu authentication)
-router.post('/create_payment_url', auth, paymentController.createPaymentUrl);
-
-// Callback từ VNPay (không cần auth vì VNPay gọi trực tiếp)
-router.get('/vnpay_return', paymentController.vnpayReturn);
+router.post('/create_payment_url', auth, asyncHandler(paymentController.createPaymentUrl));
+router.get('/vnpay_return', asyncHandler(paymentController.vnpayReturn));
 
 export default router;
-
