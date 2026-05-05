@@ -1,0 +1,252 @@
+[
+    {
+        "email": "user1@example.com",
+        "password": "123456",
+        "role": "admin"
+    },
+    {
+        "email": "user2@example.com",
+        "password": "123456",
+        "role": "customer"
+    },
+    {
+        "email": "user3@example.com",
+        "password": "123456",
+        "role": "customer"
+    },
+    {
+        "email": "user4@example.com",
+        "password": "123456",
+        "role": "customer"
+    },
+    {
+        "email": "user5@example.com",
+        "password": "123456",
+        "role": "customer"
+    },
+    {
+        "email": "user6@example.com",
+        "password": "123456",
+        "role": "customer"
+    },
+    {
+        "email": "user7@example.com",
+        "password": "123456",
+        "role": "customer"
+    },
+    {
+        "email": "user8@example.com",
+        "password": "123456",
+        "role": "customer"
+    },
+    {
+        "email": "user9@example.com",
+        "password": "123456",
+        "role": "customer"
+    },
+    {
+        "email": "user10@example.com",
+        "password": "123456",
+        "role": "customer"
+    },
+    {
+        "email": "user11@example.com",
+        "password": "123456",
+        "role": "customer"
+    },
+    {
+        "email": "user12@example.com",
+        "password": "123456",
+        "role": "customer"
+    },
+    {
+        "email": "user13@example.com",
+        "password": "123456",
+        "role": "customer"
+    },
+    {
+        "email": "user14@example.com",
+        "password": "123456",
+        "role": "customer"
+    },
+    {
+        "email": "user15@example.com",
+        "password": "123456",
+        "role": "customer"
+    },
+    {
+        "email": "user16@example.com",
+        "password": "123456",
+        "role": "customer"
+    },
+    {
+        "email": "user17@example.com",
+        "password": "123456",
+        "role": "customer"
+    },
+    {
+        "email": "user18@example.com",
+        "password": "123456",
+        "role": "customer"
+    },
+    {
+        "email": "user19@example.com",
+        "password": "123456",
+        "role": "customer"
+    },
+    {
+        "email": "user20@example.com",
+        "password": "123456",
+        "role": "customer"
+    },
+    {
+        "email": "user21@example.com",
+        "password": "123456",
+        "role": "customer"
+    },
+    {
+        "email": "user22@example.com",
+        "password": "123456",
+        "role": "customer"
+    },
+    {
+        "email": "user23@example.com",
+        "password": "123456",
+        "role": "customer"
+    },
+    {
+        "email": "user24@example.com",
+        "password": "123456",
+        "role": "customer"
+    },
+    {
+        "email": "user25@example.com",
+        "password": "123456",
+        "role": "customer"
+    },
+    {
+        "email": "user26@example.com",
+        "password": "123456",
+        "role": "customer"
+    },
+    {
+        "email": "user27@example.com",
+        "password": "123456",
+        "role": "customer"
+    },
+    {
+        "email": "user28@example.com",
+        "password": "123456",
+        "role": "customer"
+    },
+    {
+        "email": "user29@example.com",
+        "password": "123456",
+        "role": "customer"
+    },
+    {
+        "email": "user30@example.com",
+        "password": "123456",
+        "role": "customer"
+    },
+    {
+        "email": "user31@example.com",
+        "password": "123456",
+        "role": "customer"
+    },
+    {
+        "email": "user32@example.com",
+        "password": "123456",
+        "role": "customer"
+    },
+    {
+        "email": "user33@example.com",
+        "password": "123456",
+        "role": "customer"
+    },
+    {
+        "email": "user34@example.com",
+        "password": "123456",
+        "role": "customer"
+    },
+    {
+        "email": "user35@example.com",
+        "password": "123456",
+        "role": "customer"
+    },
+    {
+        "email": "user36@example.com",
+        "password": "123456",
+        "role": "customer"
+    },
+    {
+        "email": "user37@example.com",
+        "password": "123456",
+        "role": "customer"
+    },
+    {
+        "email": "user38@example.com",
+        "password": "123456",
+        "role": "customer"
+    },
+    {
+        "email": "user39@example.com",
+        "password": "123456",
+        "role": "customer"
+    },
+    {
+        "email": "user40@example.com",
+        "password": "123456",
+        "role": "customer"
+    },
+    {
+        "email": "user41@example.com",
+        "password": "123456",
+        "role": "customer"
+    },
+    {
+        "email": "user42@example.com",
+        "password": "123456",
+        "role": "customer"
+    },
+    {
+        "email": "user43@example.com",
+        "password": "123456",
+        "role": "customer"
+    },
+    {
+        "email": "user44@example.com",
+        "password": "123456",
+        "role": "customer"
+    },
+    {
+        "email": "user45@example.com",
+        "password": "123456",
+        "role": "customer"
+    },
+    {
+        "email": "user46@example.com",
+        "password": "123456",
+        "role": "customer"
+    },
+    {
+        "email": "user47@example.com",
+        "password": "123456",
+        "role": "customer"
+    },
+    {
+        "email": "user48@example.com",
+        "password": "123456",
+        "role": "customer"
+    },
+    {
+        "email": "user49@example.com",
+        "password": "123456",
+        "role": "customer"
+    },
+    {
+        "email": "user50@example.com",
+        "password": "123456",
+        "role": "customer"
+    }
+]

@@ -1,0 +1,805 @@
+{
+	"info": {
+		"_postman_id": "bookstore-api-collection",
+		"name": "Bookstore E-commerce API",
+		"description": "Complete API collection for Bookstore E-commerce project",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "Login",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/users/login",
+							"host": ["{{base_url}}"],
+							"path": ["api", "users", "login"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Register - Request OTP",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"newuser@example.com\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/users/request-otp",
+							"host": ["{{base_url}}"],
+							"path": ["api", "users", "request-otp"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Register - Verify OTP",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"newuser@example.com\",\n  \"otp\": \"123456\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/users/verify-otp",
+							"host": ["{{base_url}}"],
+							"path": ["api", "users", "verify-otp"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Register - Complete",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"newuser@example.com\",\n  \"otp\": \"123456\",\n  \"name\": \"John Doe\",\n  \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/users/register",
+							"host": ["{{base_url}}"],
+							"path": ["api", "users", "register"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Refresh Token",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/users/refresh-token",
+							"host": ["{{base_url}}"],
+							"path": ["api", "users", "refresh-token"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Logout",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/users/logout",
+							"host": ["{{base_url}}"],
+							"path": ["api", "users", "logout"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Reset Password - Request OTP",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"user@example.com\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/users/reset-password",
+							"host": ["{{base_url}}"],
+							"path": ["api", "users", "reset-password"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Books",
+			"item": [
+				{
+					"name": "Get All Books",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/books?title=&author=&genre=&min_price=&max_price=&sort=",
+							"host": ["{{base_url}}"],
+							"path": ["api", "books"],
+							"query": [
+								{
+									"key": "title",
+									"value": ""
+								},
+								{
+									"key": "author",
+									"value": ""
+								},
+								{
+									"key": "genre",
+									"value": ""
+								},
+								{
+									"key": "min_price",
+									"value": ""
+								},
+								{
+									"key": "max_price",
+									"value": ""
+								},
+								{
+									"key": "sort",
+									"value": ""
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Book By ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/books/:id",
+							"host": ["{{base_url}}"],
+							"path": ["api", "books", ":id"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get New Releases",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/books/new-releases",
+							"host": ["{{base_url}}"],
+							"path": ["api", "books", "new-releases"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Top Rated Books",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/books/top-rated",
+							"host": ["{{base_url}}"],
+							"path": ["api", "books", "top-rated"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Book (Admin)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_access_token}}"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "title",
+									"value": "New Book Title",
+									"type": "text"
+								},
+								{
+									"key": "description",
+									"value": "Book description here",
+									"type": "text"
+								},
+								{
+									"key": "publisher_id",
+									"value": "1",
+									"type": "text"
+								},
+								{
+									"key": "stock",
+									"value": "100",
+									"type": "text"
+								},
+								{
+									"key": "price",
+									"value": "250000",
+									"type": "text"
+								},
+								{
+									"key": "isbn",
+									"value": "9781234567890",
+									"type": "text"
+								},
+								{
+									"key": "release_date",
+									"value": "2024-01-01",
+									"type": "text"
+								},
+								{
+									"key": "authors",
+									"value": "1,2",
+									"type": "text"
+								},
+								{
+									"key": "genres",
+									"value": "1,2",
+									"type": "text"
+								},
+								{
+									"key": "cover_image",
+									"type": "file",
+									"src": []
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/api/books",
+							"host": ["{{base_url}}"],
+							"path": ["api", "books"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Book (Admin)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_access_token}}"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "title",
+									"value": "Updated Book Title",
+									"type": "text"
+								},
+								{
+									"key": "price",
+									"value": "300000",
+									"type": "text"
+								},
+								{
+									"key": "stock",
+									"value": "50",
+									"type": "text"
+								},
+								{
+									"key": "cover_image",
+									"type": "file",
+									"src": []
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/api/books/:id",
+							"host": ["{{base_url}}"],
+							"path": ["api", "books", ":id"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Book (Admin)",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/books/:id",
+							"host": ["{{base_url}}"],
+							"path": ["api", "books", ":id"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Cart",
+			"item": [
+				{
+					"name": "Get Cart",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/cart",
+							"host": ["{{base_url}}"],
+							"path": ["api", "cart"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Add to Cart",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"book_id\": 1,\n  \"quantity\": 2\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/cart",
+							"host": ["{{base_url}}"],
+							"path": ["api", "cart"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Cart",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"book_id\": 1,\n  \"quantity\": 5\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/cart",
+							"host": ["{{base_url}}"],
+							"path": ["api", "cart"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Remove from Cart",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/cart/:book_id",
+							"host": ["{{base_url}}"],
+							"path": ["api", "cart", ":book_id"],
+							"variable": [
+								{
+									"key": "book_id",
+									"value": "1"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Orders",
+			"item": [
+				{
+					"name": "Create Order",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"promo_code\": \"DISCOUNT10\",\n  \"payment_method\": \"cash_on_delivery\",\n  \"address\": \"123 Main St, City\",\n  \"phone\": \"0123456789\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/orders",
+							"host": ["{{base_url}}"],
+							"path": ["api", "orders"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get My Orders",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/orders",
+							"host": ["{{base_url}}"],
+							"path": ["api", "orders"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Orders (Admin)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/orders/all",
+							"host": ["{{base_url}}"],
+							"path": ["api", "orders", "all"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Order Status (Admin)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_access_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"status\": \"shipped\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/orders/:order_id/status",
+							"host": ["{{base_url}}"],
+							"path": ["api", "orders", ":order_id", "status"],
+							"variable": [
+								{
+									"key": "order_id",
+									"value": "1"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Reviews",
+			"item": [
+				{
+					"name": "Add Review",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"book_id\": 1,\n  \"rating\": 5,\n  \"comment\": \"Great book!\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/reviews",
+							"host": ["{{base_url}}"],
+							"path": ["api", "reviews"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Reviews by Book",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/reviews/book/:book_id",
+							"host": ["{{base_url}}"],
+							"path": ["api", "reviews", "book", ":book_id"],
+							"variable": [
+								{
+									"key": "book_id",
+									"value": "1"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Reviews (Admin)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/reviews/all",
+							"host": ["{{base_url}}"],
+							"path": ["api", "reviews", "all"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Promo Codes",
+			"item": [
+				{
+					"name": "Get All Promos",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/promos",
+							"host": ["{{base_url}}"],
+							"path": ["api", "promos"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Check Promo Code",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"code\": \"DISCOUNT10\",\n  \"total_price\": 500000\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/promos/by-code",
+							"host": ["{{base_url}}"],
+							"path": ["api", "promos", "by-code"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Promo (Admin)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_access_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"code\": \"DISCOUNT10\",\n  \"discount_percent\": 10,\n  \"min_amount\": 100000,\n  \"expiry_date\": \"2025-12-31\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/promos",
+							"host": ["{{base_url}}"],
+							"path": ["api", "promos"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Promos (Admin)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/promos/all",
+							"host": ["{{base_url}}"],
+							"path": ["api", "promos", "all"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Admin",
+			"item": [
+				{
+					"name": "Get All Users (Admin)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/users",
+							"host": ["{{base_url}}"],
+							"path": ["api", "users"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Dashboard Stats",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/admin/stats",
+							"host": ["{{base_url}}"],
+							"path": ["api", "admin", "stats"]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:3000",
+			"type": "string"
+		},
+		{
+			"key": "access_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "admin_access_token",
+			"value": "",
+			"type": "string"
+		}
+	]
+}
+
+
+
+
+
+

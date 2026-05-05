@@ -1,0 +1,30 @@
+{
+  "workspace": {
+    "id": "aa1de564-7a09-457c-8d72-c478cc0b16ef"
+  },
+  "entities": {
+    "collections": [
+      {
+        "id": "bookstore-api-collection",
+        "name": "Bookstore E-commerce API",
+        "path": "postman/collections/Bookstore_API.postman_collection.json"
+      }
+    ],
+    "environments": [
+      {
+        "id": "local-environment",
+        "name": "Local Development",
+        "path": "postman/environments/Local.postman_environment.json"
+      }
+    ],
+    "specs": [],
+    "flows": [],
+    "globals": [
+      {
+        "id": "71ea04f1-004f-4465-90dc-bc010d673e7c",
+        "name": "Globals",
+        "path": "postman/globals/workspace.postman_globals.json"
+      }
+    ]
+  }
+}
