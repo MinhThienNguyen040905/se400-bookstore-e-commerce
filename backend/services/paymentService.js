@@ -10,6 +10,8 @@ import { ORDER_STATUS } from '../constants/orderStatus.js';
 import { sendOrderConfirmation } from '../utils/email.js';
 import vnpayService from './vnpayService.js';
 
+const PENDING_PAYMENT_EXPIRE_MINUTES = 15;
+
 const buildFailureUrl = ({ clientUrl, code, message }) => {
     const url = new URL('/order-failure', clientUrl);
     url.searchParams.set('code', code);
@@ -159,6 +161,11 @@ const handleVnpayReturn = async ({ query, clientUrl }) => {
             return { redirectUrl: buildFailureUrl({ clientUrl, code: '01', message: 'Order Not Found' }) };
         }
 
+        if (order.payment_status === 'paid' || order.status !== ORDER_STATUS.PENDING_PAYMENT) {
+            await transaction.rollback();
+            return { redirectUrl: buildSuccessUrl({ clientUrl, orderId }) };
+        }
+
         if (responseCode === '00') {
             order.status = ORDER_STATUS.PROCESSING;
             order.payment_status = 'paid';
@@ -192,4 +199,39 @@ const handleVnpayReturn = async ({ query, clientUrl }) => {
     }
 };
 
-export default { createVnpayPayment, handleVnpayReturn };
+const cleanupExpiredPendingPayments = async () => {
+    const deadline = new Date(Date.now() - PENDING_PAYMENT_EXPIRE_MINUTES * 60 * 1000);
+    const transaction = await sequelize.transaction();
+
+    try {
+        const expiredOrders = await Order.findAll({
+            where: {
+                status: ORDER_STATUS.PENDING_PAYMENT,
+                payment_status: 'pending',
+                order_date: { [Op.lte]: deadline }
+            },
+            include: [{ model: OrderItem }],
+            transaction
+        });
+
+        for (const order of expiredOrders) {
+            for (const item of order.OrderItems) {
+                await Book.increment('stock', {
+                    by: item.quantity,
+                    where: { book_id: item.book_id },
+                    transaction
+                });
+            }
+
+            await order.destroy({ transaction });
+        }
+
+        await transaction.commit();
+        return expiredOrders.length;
+    } catch (err) {
+        if (!transaction.finished) await transaction.rollback();
+        throw err;
+    }
+};
+
+export default { createVnpayPayment, handleVnpayReturn, cleanupExpiredPendingPayments };

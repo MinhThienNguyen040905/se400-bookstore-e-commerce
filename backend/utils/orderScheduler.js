@@ -3,6 +3,7 @@ import cron from 'node-cron';
 import { Op } from 'sequelize';
 import Order from '../models/Order.js';
 import { ORDER_STATUS } from '../constants/orderStatus.js';
+import paymentService from '../services/paymentService.js';
 
 const DAYS_TO_SHIP = 2;
 const DAYS_TO_DELIVER = 4;
@@ -12,6 +13,11 @@ const runOrderScheduler = () => {
         console.log('Start automatic order scan...');
 
         try {
+            const cleanedOrders = await paymentService.cleanupExpiredPendingPayments();
+            if (cleanedOrders > 0) {
+                console.log(`Cleaned ${cleanedOrders} expired pending payment orders`);
+            }
+
             const now = new Date();
 
             const processingDeadline = new Date(now);
