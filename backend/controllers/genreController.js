@@ -1,6 +1,7 @@
 // controllers/genreController.js
 import Genre from '../models/Genre.js';
 import Book from '../models/Book.js';
+import AppError from '../errors/AppError.js';
 
 // === LẤY DANH SÁCH THỂ LOẠI ===
 const getGenres = async (req, res) => {
@@ -18,23 +19,19 @@ const getGenres = async (req, res) => {
 // === THÊM THỂ LOẠI (Admin) ===
 const addGenre = async (req, res) => {
     const { name } = req.body;
-    try {
-        if (!name) {
-            return res.error('Tên thể loại không được để trống', 400);
-        }
 
-        // Kiểm tra trùng tên
-        const existingGenre = await Genre.findOne({ where: { name } });
-        if (existingGenre) {
-            return res.error('Thể loại này đã tồn tại', 400);
-        }
-
-        const newGenre = await Genre.create({ name });
-        res.success(newGenre, 'Thêm thể loại thành công', 201);
-    } catch (err) {
-        console.error('Add genre error:', err);
-        res.error('Lỗi server', 500);
+    if (!name) {
+        throw new AppError('Tên thể loại không được để trống', 400);
     }
+
+    // Kiểm tra trùng tên
+    const existingGenre = await Genre.findOne({ where: { name } });
+    if (existingGenre) {
+        throw new AppError('Thể loại này đã tồn tại', 400);
+    }
+
+    const newGenre = await Genre.create({ name });
+    res.success(newGenre, 'Thêm thể loại thành công', 201);
 };
 
 // === CẬP NHẬT THỂ LOẠI (Admin) ===

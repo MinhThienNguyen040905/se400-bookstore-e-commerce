@@ -5,6 +5,7 @@ import 'dotenv/config';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import response from './middleware/response.js';
+import errorHandler from './middleware/errorHandler.js';
 import runOrderScheduler from './utils/orderScheduler.js';
 
 // Routes
@@ -41,6 +42,7 @@ app.use('/api/authors', authorRoutes);
 app.use('/api/publishers', publisherRoutes);
 app.use('/api/genres', genreRoutes);
 app.use('/api/payment', paymentRoutes);
+app.use(errorHandler);
 
 // Sync DB and start server
 async function start() {
