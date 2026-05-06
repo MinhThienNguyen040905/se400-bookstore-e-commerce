@@ -1,13 +1,15 @@
 // controllers/orderController.js
 import orderService from '../services/orderService.js';
+import orderValidator from '../validators/orderValidator.js';
 
 const createOrder = async (req, res) => {
+    const input = orderValidator.createCodOrder(req.body);
     const order = await orderService.createCodOrder({
         userId: req.user.user_id,
-        promoCode: req.body.promo_code,
-        paymentMethod: req.body.payment_method,
-        address: req.body.address,
-        phone: req.body.phone
+        promoCode: input.promoCode,
+        paymentMethod: input.paymentMethod,
+        address: input.address,
+        phone: input.phone
     });
 
     res.success(order, 'Dat hang COD thanh cong!', 201);
@@ -35,18 +37,20 @@ const getAllOrders = async (req, res) => {
 };
 
 const updateOrderStatus = async (req, res) => {
+    const input = orderValidator.updateOrderStatus(req.body);
     const order = await orderService.updateOrderStatus({
-        orderId: req.body.order_id,
-        status: req.body.status
+        orderId: input.orderId,
+        status: input.status
     });
 
     res.success(order, 'Cap nhat trang thai thanh cong');
 };
 
 const cancelOrder = async (req, res) => {
+    const input = orderValidator.cancelOrder(req.body);
     const result = await orderService.cancelOrder({
         userId: req.user.user_id,
-        orderId: req.body.order_id
+        orderId: input.orderId
     });
 
     res.success(result, 'Huy don hang thanh cong');

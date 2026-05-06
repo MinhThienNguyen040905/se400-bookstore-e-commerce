@@ -152,10 +152,10 @@ Output de xuat:
 
 Checklist:
 
-- [ ] Chuyen logic tinh subtotal tu `orderService.js` va `paymentService.js`.
-- [ ] Chuyen logic promo duplicate vao `orderPricingService.js` hoac reuse `promoService`.
-- [ ] Dam bao promo het han/khong du min amount giu behavior cu neu frontend dang phu thuoc.
-- [ ] COD va VNPay cung goi `calculateOrderPricing`.
+- [x] Chuyen logic tinh subtotal tu `orderService.js` va `paymentService.js`.
+- [x] Chuyen logic promo duplicate vao `orderPricingService.js` hoac reuse `promoService`.
+- [x] Dam bao promo het han/khong du min amount giu behavior cu neu frontend dang phu thuoc.
+- [x] COD va VNPay cung goi `calculateOrderPricing`.
 - [ ] Manual test:
   - Khong co promo.
   - Promo hop le.
@@ -185,11 +185,11 @@ restoreStockForOrderItems({ orderItems, transaction })
 
 Checklist:
 
-- [ ] Move check stock tu `orderService.createCodOrder`.
-- [ ] Move check stock tu `paymentService.createVnpayPayment`.
-- [ ] Move decrement stock tu COD/VNPay vao helper.
-- [ ] Move increment stock tu cancel/payment failed/cleanup vao helper.
-- [ ] Trong checkout COD/VNPay, lock row book khi validate stock.
+- [x] Move check stock tu `orderService.createCodOrder`.
+- [x] Move check stock tu `paymentService.createVnpayPayment`.
+- [x] Move decrement stock tu COD/VNPay vao helper.
+- [x] Move increment stock tu cancel/payment failed/cleanup vao helper.
+- [x] Trong checkout COD/VNPay, lock row book khi validate stock.
 - [ ] Manual test:
   - Out of stock.
   - COD create.
@@ -229,12 +229,12 @@ const withTransaction = async (handler) => {
 
 Checklist:
 
-- [ ] Tao `withTransaction`.
-- [ ] Doi `createCodOrder` sang `withTransaction`.
-- [ ] Doi `cancelOrder` sang `withTransaction`.
-- [ ] Doi `createVnpayPayment`, `handleVnpayReturn`, `cleanupExpiredPendingPayments`.
-- [ ] Khong doi behavior ngoai API.
-- [ ] `node --check` pass.
+- [x] Tao `withTransaction`.
+- [x] Doi `createCodOrder` sang `withTransaction`.
+- [x] Doi `cancelOrder` sang `withTransaction`.
+- [x] Doi `createVnpayPayment`, `handleVnpayReturn`, `cleanupExpiredPendingPayments`.
+- [x] Khong doi behavior ngoai API.
+- [x] `node --check` pass.
 
 ## 9. Phase 6: Tach order repository cho query dai
 
@@ -261,11 +261,11 @@ findOrderForCancel({ orderId, userId, transaction })
 
 Checklist:
 
-- [ ] Tach query cua `getOrders`.
-- [ ] Tach query cua `getMyOrders`.
-- [ ] Tach query cua `getAllOrders`.
-- [ ] Tach query cua `getOrderById`.
-- [ ] Giu mapping/permission trong service neu do la business rule.
+- [x] Tach query cua `getOrders`.
+- [x] Tach query cua `getMyOrders`.
+- [x] Tach query cua `getAllOrders`.
+- [x] Tach query cua `getOrderById`.
+- [x] Giu mapping/permission trong service neu do la business rule.
 - [ ] Manual test:
   - User get own orders.
   - Admin get all.
@@ -290,13 +290,13 @@ backend/validators/
 
 Checklist:
 
-- [ ] `orderValidator.createCodOrder(body)` parse `promo_code`, `payment_method`, `address`, `phone`.
-- [ ] `orderValidator.updateOrderStatus(body)` validate `order_id`, `status`.
-- [ ] `orderValidator.cancelOrder(body)` validate `order_id`.
-- [ ] `paymentValidator.createVnpayPayment(body)` validate `address`, `phone`, `promo_code`.
-- [ ] `cartValidator` parse `book_id`, `quantity`.
-- [ ] Controller goi validator truoc service.
-- [ ] Service tiep tuc throw `AppError` cho rule can DB nhu stock/user/order permission.
+- [x] `orderValidator.createCodOrder(body)` parse `promo_code`, `payment_method`, `address`, `phone`.
+- [x] `orderValidator.updateOrderStatus(body)` validate `order_id`, `status`.
+- [x] `orderValidator.cancelOrder(body)` validate `order_id`.
+- [x] `paymentValidator.createVnpayPayment(body)` validate `address`, `phone`, `promo_code`.
+- [x] `cartValidator` parse `book_id`, `quantity`.
+- [x] Controller goi validator truoc service.
+- [x] Service tiep tuc throw `AppError` cho rule can DB nhu stock/user/order permission.
 
 ## 11. Thu tu commit de de review
 
