@@ -58,23 +58,23 @@ Muc tieu:
 
 Checklist:
 
-- [ ] Import `User` vao `paymentService.js`.
-- [ ] Doi dieu kien idempotent trong `handleVnpayReturn`:
+- [x] Import `User` vao `paymentService.js`.
+- [x] Doi dieu kien idempotent trong `handleVnpayReturn`:
   - Neu `payment_status === 'paid'` thi redirect success.
   - Neu order da `cancelled` hoac `payment_status === 'failed'` thi redirect failure/status ro rang.
   - Chi xu ly thanh toan khi `status === pending_payment` va `payment_status === pending`.
-- [ ] Khi VNPay response fail:
+- [x] Khi VNPay response fail:
   - Hoan kho mot lan.
   - Set `status = cancelled`.
   - Set `payment_status = failed`.
   - Luu `vnpay_transaction_no` neu co.
   - Khong `destroy` order tru khi co yeu cau ro rang.
-- [ ] Khi pending payment het han:
+- [x] Khi pending payment het han:
   - Hoan kho.
   - Set `status = cancelled`.
   - Set `payment_status = failed`.
   - Khong hard delete order.
-- [ ] Dam bao cleanup scheduler khong hoan kho lai cho order da failed/cancelled.
+- [x] Dam bao cleanup scheduler khong hoan kho lai cho order da failed/cancelled.
 - [ ] Manual test:
   - Signature invalid.
   - Order not found.
@@ -105,13 +105,13 @@ Huong xu ly de xuat:
 
 Checklist:
 
-- [ ] Tao helper `releasePendingPaymentOrder({ order, transaction, reason })`.
-- [ ] Truoc khi tao pending order moi, tim pending order cu cua user.
-- [ ] Neu co pending order cu:
+- [x] Tao helper `releasePendingPaymentOrder({ order, transaction, reason })`.
+- [x] Truoc khi tao pending order moi, tim pending order cu cua user.
+- [x] Neu co pending order cu:
   - Lock/order query trong transaction.
   - Hoan kho order items.
   - Set `status = cancelled`, `payment_status = failed`.
-- [ ] Khi tao order VNPay moi, lock stock row truoc khi tru kho.
+- [x] Khi tao order VNPay moi, lock stock row truoc khi tru kho.
 - [ ] Manual test:
   - Click tao VNPay URL 2 lan lien tiep.
   - Stock chi phan anh order pending moi nhat.

@@ -6,6 +6,7 @@ import OrderItem from '../models/OrderItem.js';
 import CartItem from '../models/CartItem.js';
 import Book from '../models/Book.js';
 import PromoCode from '../models/PromoCode.js';
+import User from '../models/User.js';
 import { ORDER_STATUS } from '../constants/orderStatus.js';
 import { sendOrderConfirmation } from '../utils/email.js';
 import vnpayService from './vnpayService.js';
@@ -24,6 +25,34 @@ const buildSuccessUrl = ({ clientUrl, orderId }) => {
     url.searchParams.set('code', '00');
     url.searchParams.set('orderId', orderId);
     return url.toString();
+};
+
+const restoreOrderStock = async ({ orderItems, transaction }) => {
+    for (const item of orderItems) {
+        await Book.increment('stock', {
+            by: item.quantity,
+            where: { book_id: item.book_id },
+            transaction
+        });
+    }
+};
+
+const releasePendingPaymentOrder = async ({ order, transaction, reason }) => {
+    if (order.status !== ORDER_STATUS.PENDING_PAYMENT || order.payment_status !== 'pending') {
+        return false;
+    }
+
+    await restoreOrderStock({ orderItems: order.OrderItems || [], transaction });
+
+    order.status = ORDER_STATUS.CANCELLED;
+    order.payment_status = 'failed';
+    await order.save({ transaction });
+
+    if (reason) {
+        console.log(`Released pending VNPay order ${order.order_id}: ${reason}`);
+    }
+
+    return true;
 };
 
 const applyPromoCode = async ({ promoCode, totalPrice }) => {
@@ -86,12 +115,40 @@ const createVnpayPayment = async ({ userId, address, phone, promoCode, ipAddress
             throw new AppError('Gio hang trong', 400);
         }
 
+        const existingPendingOrders = await Order.findAll({
+            where: {
+                user_id: userId,
+                payment_method: 'VNPay',
+                status: ORDER_STATUS.PENDING_PAYMENT,
+                payment_status: 'pending'
+            },
+            include: [{ model: OrderItem }],
+            lock: transaction.LOCK.UPDATE,
+            transaction
+        });
+
+        for (const pendingOrder of existingPendingOrders) {
+            await releasePendingPaymentOrder({
+                order: pendingOrder,
+                transaction,
+                reason: 'creating replacement VNPay payment'
+            });
+        }
+
         let totalPrice = 0;
+        const lockedBooks = new Map();
+
         for (const item of cartItems) {
-            const book = item.Book;
+            const book = await Book.findByPk(item.book_id, {
+                lock: transaction.LOCK.UPDATE,
+                transaction
+            });
+
             if (!book || book.stock < item.quantity) {
                 throw new AppError(`Het hang: ${book?.title || item.book_id}`, 400);
             }
+
+            lockedBooks.set(item.book_id, book);
             totalPrice += item.quantity * book.price;
         }
 
@@ -110,11 +167,13 @@ const createVnpayPayment = async ({ userId, address, phone, promoCode, ipAddress
         }, { transaction });
 
         for (const item of cartItems) {
+            const book = lockedBooks.get(item.book_id);
+
             await OrderItem.create({
                 order_id: order.order_id,
                 book_id: item.book_id,
                 quantity: item.quantity,
-                price: item.Book.price
+                price: book.price
             }, { transaction });
 
             await Book.decrement('stock', {
@@ -161,9 +220,31 @@ const handleVnpayReturn = async ({ query, clientUrl }) => {
             return { redirectUrl: buildFailureUrl({ clientUrl, code: '01', message: 'Order Not Found' }) };
         }
 
-        if (order.payment_status === 'paid' || order.status !== ORDER_STATUS.PENDING_PAYMENT) {
+        if (order.payment_status === 'paid') {
             await transaction.rollback();
             return { redirectUrl: buildSuccessUrl({ clientUrl, orderId }) };
+        }
+
+        if (order.status === ORDER_STATUS.CANCELLED || order.payment_status === 'failed') {
+            await transaction.rollback();
+            return {
+                redirectUrl: buildFailureUrl({
+                    clientUrl,
+                    code: responseCode || '24',
+                    message: 'Payment Failed Or Cancelled'
+                })
+            };
+        }
+
+        if (order.status !== ORDER_STATUS.PENDING_PAYMENT || order.payment_status !== 'pending') {
+            await transaction.rollback();
+            return {
+                redirectUrl: buildFailureUrl({
+                    clientUrl,
+                    code: '98',
+                    message: 'Invalid Order Payment State'
+                })
+            };
         }
 
         if (responseCode === '00') {
@@ -180,15 +261,12 @@ const handleVnpayReturn = async ({ query, clientUrl }) => {
             return { redirectUrl: buildSuccessUrl({ clientUrl, orderId }) };
         }
 
-        for (const item of order.OrderItems) {
-            await Book.increment('stock', {
-                by: item.quantity,
-                where: { book_id: item.book_id },
-                transaction
-            });
-        }
+        await restoreOrderStock({ orderItems: order.OrderItems, transaction });
 
-        await order.destroy({ transaction });
+        order.status = ORDER_STATUS.CANCELLED;
+        order.payment_status = 'failed';
+        order.vnpay_transaction_no = transactionNo || order.vnpay_transaction_no;
+        await order.save({ transaction });
         await transaction.commit();
 
         return { redirectUrl: buildFailureUrl({ clientUrl, code: responseCode }) };
@@ -215,15 +293,11 @@ const cleanupExpiredPendingPayments = async () => {
         });
 
         for (const order of expiredOrders) {
-            for (const item of order.OrderItems) {
-                await Book.increment('stock', {
-                    by: item.quantity,
-                    where: { book_id: item.book_id },
-                    transaction
-                });
-            }
+            await restoreOrderStock({ orderItems: order.OrderItems, transaction });
 
-            await order.destroy({ transaction });
+            order.status = ORDER_STATUS.CANCELLED;
+            order.payment_status = 'failed';
+            await order.save({ transaction });
         }
 
         await transaction.commit();
