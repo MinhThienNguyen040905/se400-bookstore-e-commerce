@@ -2,6 +2,7 @@ import reviewRepository from '../../repositories/reviewRepository.js';
 import { createJsonCompletion, isAiEnabled, isGroqConfigured } from './groqClient.js';
 import { clampNumber } from './jsonParser.js';
 import { fallbackAnalyzeReview } from './fallbackSentiment.js';
+import { sanitizePii } from './sanitize.js';
 
 const PROMPT_VERSION = 'review-sentiment-v1';
 
@@ -70,12 +71,13 @@ JSON schema:
 }`;
 
 const analyzeWithGroq = async (review) => {
-    const comment = (review.comment || '').slice(0, maxReviewChars());
+    const sanitizedComment = sanitizePii(review.comment || '').slice(0, maxReviewChars());
+    const sanitizedTitle = sanitizePii(review.Book?.title || '');
     const completion = await createJsonCompletion({
         prompt: buildPrompt({
             rating: review.rating,
-            comment,
-            bookTitle: review.Book?.title
+            comment: sanitizedComment,
+            bookTitle: sanitizedTitle
         }),
         model: process.env.GROQ_MODEL_FAST || 'llama-3.1-8b-instant'
     });
@@ -85,7 +87,10 @@ const analyzeWithGroq = async (review) => {
         provider: completion.provider,
         model: completion.model,
         prompt_version: PROMPT_VERSION,
-        raw_response: completion.rawResponse
+        raw_response: {
+            usage: completion.rawResponse?.usage || null,
+            finish_reason: completion.rawResponse?.choices?.[0]?.finish_reason || null
+        }
     };
 };
 

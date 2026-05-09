@@ -73,7 +73,8 @@ const getStats = async () => {
     };
 };
 
-const getAiInsights = async () => {
+const getAiInsights = async ({ suspiciousLimit = 10 } = {}) => {
+    const safeSuspiciousLimit = Math.min(Math.max(Number(suspiciousLimit) || 10, 1), 50);
     const negativeReviewBooks = await sequelize.query(
         `
         SELECT
@@ -114,7 +115,7 @@ const getAiInsights = async () => {
     );
 
     const suspiciousReviews = await Review.findAll({
-        limit: 10,
+        limit: safeSuspiciousLimit,
         include: [
             { model: User, attributes: ['user_id', 'name'] },
             { model: Book, attributes: ['book_id', 'title'] },

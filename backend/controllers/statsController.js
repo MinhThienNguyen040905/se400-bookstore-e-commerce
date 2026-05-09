@@ -6,7 +6,9 @@ const getStats = async (req, res) => {
 };
 
 const getAiInsights = async (req, res) => {
-    const result = await statsService.getAiInsights();
+    const result = await statsService.getAiInsights({
+        suspiciousLimit: req.query.suspiciousLimit
+    });
     res.success(result, 'Lay AI insights thanh cong');
 };
 

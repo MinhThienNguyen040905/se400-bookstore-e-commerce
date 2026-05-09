@@ -3,12 +3,16 @@ import recommendationValidator from '../validators/recommendationValidator.js';
 
 const getPersonalized = async (req, res) => {
     const input = recommendationValidator.list(req.query);
+    const userId = req.user?.user_id;
     const result = await recommendationService.getPersonalizedRecommendations({
-        userId: req.user?.user_id,
+        userId,
         limit: input.limit
     });
 
-    res.success(result, 'Lay goi y ca nhan thanh cong');
+    res.success(
+        result,
+        userId ? 'Lay goi y ca nhan thanh cong' : 'Lay goi y dang thinh hanh thanh cong'
+    );
 };
 
 const getTrending = async (req, res) => {

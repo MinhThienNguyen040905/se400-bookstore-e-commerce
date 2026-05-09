@@ -1,7 +1,12 @@
 import sequelize from '../config/db.js';
 import { QueryTypes } from 'sequelize';
+import { ORDER_STATUS } from '../constants/orderStatus.js';
 
-const COMPLETED_ORDER_STATUSES = ['processing', 'shipped', 'delivered'];
+const COMPLETED_ORDER_STATUSES = [
+    ORDER_STATUS.PROCESSING,
+    ORDER_STATUS.SHIPPED,
+    ORDER_STATUS.DELIVERED
+];
 
 const findBookStats = async ({ excludeBookId = null, limit = 80 } = {}) => {
     const rows = await sequelize.query(
@@ -13,9 +18,9 @@ const findBookStats = async ({ excludeBookId = null, limit = 80 } = {}) => {
             b.price,
             b.stock,
             b.release_date,
-            COALESCE(AVG(r.rating), 0) AS avg_rating,
-            COUNT(DISTINCT r.review_id) AS review_count,
-            COALESCE(AVG(ra.sentiment_score), 0) AS avg_sentiment,
+            COALESCE(reviews_agg.avg_rating, 0) AS avg_rating,
+            COALESCE(reviews_agg.review_count, 0) AS review_count,
+            COALESCE(reviews_agg.avg_sentiment, 0) AS avg_sentiment,
             COALESCE(sales.sales_count, 0) AS sales_count,
             COALESCE(wishlist.wishlist_count, 0) AS wishlist_count,
             GROUP_CONCAT(DISTINCT a.name ORDER BY a.name SEPARATOR ', ') AS authors,
@@ -23,8 +28,16 @@ const findBookStats = async ({ excludeBookId = null, limit = 80 } = {}) => {
             GROUP_CONCAT(DISTINCT ba.author_id) AS author_ids,
             GROUP_CONCAT(DISTINCT bg.genre_id) AS genre_ids
         FROM Books b
-        LEFT JOIN Reviews r ON r.book_id = b.book_id
-        LEFT JOIN ReviewAnalyses ra ON ra.review_id = r.review_id
+        LEFT JOIN (
+            SELECT
+                r.book_id,
+                AVG(r.rating) AS avg_rating,
+                COUNT(r.review_id) AS review_count,
+                AVG(ra.sentiment_score) AS avg_sentiment
+            FROM Reviews r
+            LEFT JOIN ReviewAnalyses ra ON ra.review_id = r.review_id
+            GROUP BY r.book_id
+        ) reviews_agg ON reviews_agg.book_id = b.book_id
         LEFT JOIN (
             SELECT oi.book_id, SUM(oi.quantity) AS sales_count
             FROM OrderItems oi
@@ -42,7 +55,11 @@ const findBookStats = async ({ excludeBookId = null, limit = 80 } = {}) => {
         LEFT JOIN BookGenres bg ON bg.book_id = b.book_id
         LEFT JOIN Genres g ON g.genre_id = bg.genre_id
         WHERE (:excludeBookId IS NULL OR b.book_id != :excludeBookId)
-        GROUP BY b.book_id, b.title, b.cover_image, b.price, b.stock, b.release_date, sales.sales_count, wishlist.wishlist_count
+        GROUP BY
+            b.book_id, b.title, b.cover_image, b.price, b.stock, b.release_date,
+            reviews_agg.avg_rating, reviews_agg.review_count, reviews_agg.avg_sentiment,
+            sales.sales_count, wishlist.wishlist_count
+        ORDER BY reviews_agg.review_count DESC, sales.sales_count DESC
         LIMIT :limit
         `,
         {

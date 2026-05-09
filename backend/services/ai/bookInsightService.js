@@ -6,6 +6,7 @@ import ReviewAnalysis from '../../models/ReviewAnalysis.js';
 import BookInsight from '../../models/BookInsight.js';
 import User from '../../models/User.js';
 import { createJsonCompletion, isAiEnabled, isGroqConfigured } from './groqClient.js';
+import { sanitizePii } from './sanitize.js';
 
 const PROMPT_VERSION = 'book-insight-v1';
 
@@ -75,7 +76,7 @@ const buildFallbackInsight = ({ bookId, reviews }) => {
 const buildPrompt = ({ book, reviews }) => {
     const reviewText = reviews.slice(0, 30).map((review) => ({
         rating: review.rating,
-        comment: review.comment,
+        comment: sanitizePii(review.comment || '').slice(0, 600),
         sentiment: review.analysis?.sentiment_label,
         signals: review.analysis?.signals || []
     }));
@@ -83,7 +84,7 @@ const buildPrompt = ({ book, reviews }) => {
     return `You are summarizing customer reviews for a bookstore product page.
 Return only valid JSON in Vietnamese.
 
-Book title: ${book.title}
+Book title: ${sanitizePii(book.title || '')}
 Reviews:
 ${JSON.stringify(reviewText)}
 
@@ -167,23 +168,31 @@ const getBookInsights = async ({ bookId, forceRefresh = false }) => {
     const book = await Book.findByPk(bookId);
     if (!book) throw new AppError('Sach khong ton tai', 404);
 
-    const reviews = await findAnalyzedReviews(bookId);
-    if (!reviews.length) {
+    const reviewCount = await Review.count({ where: { book_id: bookId } });
+    if (!reviewCount) {
         return emptyInsight(bookId);
     }
 
     if (!forceRefresh) {
+        const latestReview = await Review.findOne({
+            where: { book_id: bookId },
+            attributes: ['updatedAt', 'review_date'],
+            order: [['updatedAt', 'DESC']]
+        });
+        const latestStamp = latestReview?.updatedAt || latestReview?.review_date;
+
         const cached = await BookInsight.findOne({
             where: {
                 book_id: bookId,
-                review_count: reviews.length,
-                updatedAt: { [Op.gte]: reviews[0].updatedAt || reviews[0].review_date }
+                review_count: reviewCount,
+                ...(latestStamp ? { updatedAt: { [Op.gte]: latestStamp } } : {})
             }
         });
 
         if (cached) return toResponse(cached);
     }
 
+    const reviews = await findAnalyzedReviews(bookId);
     let insight = buildFallbackInsight({ bookId, reviews });
 
     if (isAiEnabled() && isGroqConfigured()) {
