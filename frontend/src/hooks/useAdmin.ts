@@ -15,9 +15,42 @@ export interface User {
     avatar: string | null;
 }
 
+export interface AdminAiInsights {
+    negative_review_books: Array<{
+        book_id: number;
+        title: string;
+        cover_image: string;
+        analyzed_reviews: number;
+        negative_reviews: number;
+        avg_sentiment: number;
+    }>;
+    top_positive_genres: Array<{
+        genre_id: number;
+        name: string;
+        analyzed_reviews: number;
+        avg_sentiment: number;
+    }>;
+    suspicious_reviews: Array<{
+        review_id: number;
+        rating: number;
+        comment: string;
+        spam_risk: 'medium' | 'high';
+        spam_reasons: string[];
+        sentiment_label: string;
+        sentiment_score: number;
+        user: { user_id: number; name: string } | null;
+        book: { book_id: number; title: string } | null;
+    }>;
+}
+
 // --- API CALLS ---
 const getAdminStats = async (): Promise<DashboardStats> => {
     const { data } = await api.get('/admin/stats');
+    return data;
+};
+
+const getAdminAiInsights = async (): Promise<AdminAiInsights> => {
+    const { data } = await api.get('/admin/stats/ai-insights');
     return data;
 };
 
@@ -38,6 +71,15 @@ export const useAdminStats = () => {
     return useQuery({
         queryKey: ['admin-stats'],
         queryFn: getAdminStats,
+        staleTime: 1000 * 60 * 5,
+        refetchOnWindowFocus: false,
+    });
+};
+
+export const useAdminAiInsights = () => {
+    return useQuery({
+        queryKey: ['admin-ai-insights'],
+        queryFn: getAdminAiInsights,
         staleTime: 1000 * 60 * 5,
         refetchOnWindowFocus: false,
     });
@@ -67,9 +109,10 @@ export const useDeleteUser = () => {
             showToast.dismiss(context?.toastId);
             showToast.success('User deleted successfully');
         },
-        onError: (err: any, _variables, context) => {
+        onError: (err: unknown, _variables, context) => {
+            const error = err as { response?: { data?: { message?: string } } };
             showToast.dismiss(context?.toastId);
-            showToast.error(err.response?.data?.message || 'Failed to delete user');
+            showToast.error(error.response?.data?.message || 'Failed to delete user');
         },
     });
 };

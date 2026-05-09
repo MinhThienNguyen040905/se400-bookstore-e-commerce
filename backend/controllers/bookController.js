@@ -1,4 +1,5 @@
 import bookService from '../services/bookService.js';
+import bookInsightService from '../services/ai/bookInsightService.js';
 import multer from 'multer';
 import os from 'os';
 
@@ -40,6 +41,15 @@ const getBookById = async (req, res) => {
     res.success(result, 'Lay thong tin sach thanh cong');
 };
 
+const getBookInsights = async (req, res) => {
+    const result = await bookInsightService.getBookInsights({
+        bookId: req.params.id,
+        forceRefresh: req.query.refresh === 'true'
+    });
+
+    res.success(result, 'Lay AI insight sach thanh cong');
+};
+
 const updateBook = async (req, res) => {
     const result = await bookService.updateBook({
         bookId: req.params.id,
@@ -72,6 +82,7 @@ export default {
     getBooks,
     getNewReleases,
     getTopRatedBooks,
+    getBookInsights,
     getBookById,
     getAllBooksSystem
 };

@@ -8,6 +8,8 @@ import CartItem from './CartItem.js';
 import Order from './Order.js';
 import OrderItem from './OrderItem.js';
 import Review from './Review.js';
+import ReviewAnalysis from './ReviewAnalysis.js';
+import BookInsight from './BookInsight.js';
 import PromoCode from './PromoCode.js';
 import Session from './Session.js';
 import BookAuthor from './BookAuthor.js';
@@ -41,6 +43,14 @@ Review.belongsTo(User, { foreignKey: 'user_id' });
 // 7. Book ↔ Review
 Book.hasMany(Review, { foreignKey: 'book_id', onDelete: 'CASCADE' });
 Review.belongsTo(Book, { foreignKey: 'book_id' });
+
+// 7b. Review ↔ ReviewAnalysis
+Review.hasOne(ReviewAnalysis, { foreignKey: 'review_id', as: 'analysis', onDelete: 'CASCADE' });
+ReviewAnalysis.belongsTo(Review, { foreignKey: 'review_id' });
+
+// 7c. Book ↔ BookInsight
+Book.hasOne(BookInsight, { foreignKey: 'book_id', as: 'insight', onDelete: 'CASCADE' });
+BookInsight.belongsTo(Book, { foreignKey: 'book_id' });
 
 // 8. Order ↔ PromoCode (nullable)
 Order.belongsTo(PromoCode, { foreignKey: 'promo_id', allowNull: true });

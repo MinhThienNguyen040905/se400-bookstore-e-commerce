@@ -6,6 +6,7 @@ import Author from '../models/Author.js';
 import Genre from '../models/Genre.js';
 import Publisher from '../models/Publisher.js';
 import Review from '../models/Review.js';
+import ReviewAnalysis from '../models/ReviewAnalysis.js';
 import User from '../models/User.js';
 import Wishlist from '../models/Wishlist.js';
 import cloudinary from '../cloudinary.js';
@@ -319,7 +320,24 @@ const getBookById = async ({ bookId, userId }) => {
             {
                 model: Review,
                 attributes: ['review_id', 'rating', 'comment', 'review_date'],
-                include: [{ model: User, attributes: ['user_id', 'name', 'avatar'] }]
+                include: [
+                    { model: User, attributes: ['user_id', 'name', 'avatar'] },
+                    {
+                        model: ReviewAnalysis,
+                        as: 'analysis',
+                        required: false,
+                        attributes: [
+                            'sentiment_label',
+                            'sentiment_score',
+                            'confidence',
+                            'summary',
+                            'signals',
+                            'spam_risk',
+                            'spam_reasons',
+                            'provider'
+                        ]
+                    }
+                ]
             }
         ]
     });
@@ -367,7 +385,17 @@ const getBookById = async ({ bookId, userId }) => {
                 user_id: review.User?.user_id,
                 name: review.User?.name,
                 avatar: review.User?.avatar
-            }
+            },
+            analysis: review.analysis ? {
+                sentiment_label: review.analysis.sentiment_label,
+                sentiment_score: Number(review.analysis.sentiment_score),
+                confidence: Number(review.analysis.confidence),
+                summary: review.analysis.summary,
+                signals: review.analysis.signals || [],
+                spam_risk: review.analysis.spam_risk,
+                spam_reasons: review.analysis.spam_reasons || [],
+                provider: review.analysis.provider
+            } : null
         })) || []
     };
 };

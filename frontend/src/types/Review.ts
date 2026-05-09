@@ -5,5 +5,17 @@ export interface Review {
     rating: number;
     comment: string;
     review_date: string;
-    user: CommentUser
+    user: CommentUser;
+    analysis?: ReviewAnalysis | null;
+}
+
+export interface ReviewAnalysis {
+    sentiment_label: 'positive' | 'neutral' | 'negative';
+    sentiment_score: number;
+    confidence: number;
+    summary?: string;
+    signals?: string[];
+    spam_risk?: 'low' | 'medium' | 'high';
+    spam_reasons?: string[];
+    provider?: string;
 }

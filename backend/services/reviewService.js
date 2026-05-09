@@ -5,6 +5,9 @@ import User from '../models/User.js';
 import Order from '../models/Order.js';
 import OrderItem from '../models/OrderItem.js';
 import { ORDER_STATUS } from '../constants/orderStatus.js';
+import reviewRepository from '../repositories/reviewRepository.js';
+import reviewAnalysisService from './ai/reviewAnalysisService.js';
+import bookInsightService from './ai/bookInsightService.js';
 
 const addReview = async ({ userId, bookId, rating, comment }) => {
     const book = await Book.findByPk(bookId);
@@ -34,24 +37,21 @@ const addReview = async ({ userId, bookId, rating, comment }) => {
         throw new AppError('Ban chi co the danh gia sach sau khi don hang da duoc giao thanh cong', 403);
     }
 
-    return Review.create({
+    const review = await Review.create({
         user_id: userId,
         book_id: bookId,
         rating,
         comment
     });
+
+    await bookInsightService.invalidateBookInsights(bookId);
+    reviewAnalysisService.queueReviewAnalysis(review.review_id);
+
+    return review;
 };
 
-const getReviewsByBook = async ({ bookId }) => Review.findAll({
-    where: { book_id: bookId },
-    include: [{ model: User, attributes: ['user_id', 'name'] }]
-});
+const getReviewsByBook = async ({ bookId }) => reviewRepository.findReviewsByBook(bookId);
 
-const getAllReviews = async () => Review.findAll({
-    include: [
-        { model: User, attributes: ['user_id', 'name'] },
-        { model: Book, attributes: ['book_id', 'title'] }
-    ]
-});
+const getAllReviews = async () => reviewRepository.findAllReviews();
 
 export default { addReview, getReviewsByBook, getAllReviews };

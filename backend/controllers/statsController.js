@@ -5,4 +5,9 @@ const getStats = async (req, res) => {
     res.success(result, 'Lay thong ke thanh cong');
 };
 
-export default { getStats };
+const getAiInsights = async (req, res) => {
+    const result = await statsService.getAiInsights();
+    res.success(result, 'Lay AI insights thanh cong');
+};
+
+export default { getStats, getAiInsights };

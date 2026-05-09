@@ -1,20 +1,20 @@
 # Project Context - Bookstore E-commerce
 
-Tài liệu này dùng làm handoff nhanh cho các session sau. Nó phản ánh code hiện tại của project sau đợt refactor backend Order/Payment/VNPay.
+This file is a quick handoff for future sessions. It reflects the current state of the project after the Order/Payment/VNPay refactor and the AI sentiment/recommendation MVP.
 
-## Tổng Quan
+## Overview
 
-Đây là project thương mại điện tử bán sách theo kiến trúc client-server.
+This is a bookstore e-commerce app with a client-server architecture.
 
 - `backend/`: Node.js, Express, Sequelize, MySQL.
 - `frontend/`: React 19, Vite, TypeScript, React Query, Zustand, Axios.
-- Payment: COD và VNPay sandbox.
-- Auth: JWT access token qua `Authorization: Bearer ...`, refresh token lưu bằng HttpOnly cookie.
-- Media: Cloudinary cho cover sách và avatar.
-- Email: Nodemailer cho OTP và email xác nhận đơn hàng.
-- Scheduler: `node-cron` tự động xử lý order pending/processing/shipped.
+- Payment: COD and VNPay sandbox.
+- Auth: JWT access token via `Authorization: Bearer ...`, refresh token stored in HttpOnly cookie.
+- Media: Cloudinary for book covers and avatars.
+- Email: Nodemailer for OTP and order confirmation emails.
+- Scheduler: `node-cron` auto handles pending/processing/shipped orders.
 
-## Cách Chạy
+## Run
 
 Backend:
 
@@ -32,48 +32,56 @@ npm install
 npm run dev
 ```
 
-URL mặc định:
+Default URLs:
 
 - Backend: `http://localhost:3000`
 - API base: `http://localhost:3000/api`
 - Frontend: `http://localhost:5173`
 
-Biến môi trường backend quan trọng:
+## Important Env Vars
+
+Backend:
 
 - `DB_NAME`, `DB_USER`, `DB_PASS`, `DB_HOST`, `DB_PORT`
-- `SSL_CA_PATH` nếu dùng DB cloud cần SSL
+- `SSL_CA_PATH`
 - `JWT_SECRET`
 - `CLIENT_URL`
 - `EMAIL_USER`, `EMAIL_PASS`
 - `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`
 - `VNP_TMNCODE`, `VNP_HASHSECRET`
+- `AI_FEATURES_ENABLED`
+- `GROQ_API_KEY`
+- `GROQ_MODEL_FAST`
+- `GROQ_MODEL_SMART`
+- `AI_REQUEST_TIMEOUT_MS`
+- `AI_MAX_REVIEW_CHARS`
 
-Frontend dùng:
+Frontend:
 
-- `VITE_API_URL`, mặc định fallback là `http://localhost:3000/api`
+- `VITE_API_URL` with fallback to `http://localhost:3000/api`
 
-## Kiến Trúc Backend
+## Backend Architecture
 
-Backend đi theo luồng:
+Flow:
 
 ```txt
 routes -> middleware/auth + asyncHandler -> controllers -> validators -> services -> repositories/models -> database
 ```
 
-Các phần chính:
+Main folders:
 
-- `server.js`: entrypoint, load associations, middleware, routes, scheduler.
-- `routes/`: định tuyến REST API.
-- `controllers/`: lấy input HTTP, gọi validator/service, trả `res.success`.
-- `validators/`: parse và validate input đơn giản, không query DB.
-- `services/`: business logic chính, transaction, rule nghiệp vụ.
-- `repositories/`: query dài hoặc query include phức tạp, hiện mới có `orderRepository.js`.
+- `server.js`: entrypoint, associations, middleware, routes, scheduler.
+- `routes/`: REST API routing.
+- `controllers/`: read HTTP input, call validator/service, return `res.success`.
+- `validators/`: parse and validate request input only.
+- `services/`: business logic, transactions, rules.
+- `repositories/`: heavier queries / include-heavy access.
 - `models/`: Sequelize models.
 - `middleware/`: auth, response wrapper, error handler.
 - `utils/`: email, scheduler, transaction helper, timeline.
-- `errors/AppError.js`: lỗi nghiệp vụ có status code.
+- `errors/AppError.js`: business error with status code.
 
-Response thành công có format do `middleware/response.js`:
+Success response format:
 
 ```json
 {
@@ -83,7 +91,7 @@ Response thành công có format do `middleware/response.js`:
 }
 ```
 
-Lỗi nghiệp vụ dùng `AppError`, qua `errorHandler` trả:
+Error response format:
 
 ```json
 {
@@ -92,7 +100,7 @@ Lỗi nghiệp vụ dùng `AppError`, qua `errorHandler` trả:
 }
 ```
 
-## Backend Routes Chính
+## Main Routes
 
 User/Auth:
 
@@ -115,8 +123,9 @@ Books:
 - `GET /api/books/top-rated`
 - `GET /api/books/all` admin
 - `GET /api/books/:id`
-- `POST /api/books` admin, upload `cover_image`
-- `PUT /api/books/:id` admin, upload `cover_image`
+- `GET /api/books/:id/insights`
+- `POST /api/books` admin
+- `PUT /api/books/:id` admin
 - `DELETE /api/books/:id` admin
 
 Cart:
@@ -128,7 +137,7 @@ Cart:
 
 Orders:
 
-- `POST /api/orders` COD checkout
+- `POST /api/orders`
 - `GET /api/orders`
 - `GET /api/orders/my-orders`
 - `GET /api/orders/all` admin
@@ -141,33 +150,49 @@ Payment:
 - `POST /api/payment/create_payment_url`
 - `GET /api/payment/vnpay_return`
 
+Recommendations:
+
+- `GET /api/recommendations/personalized`
+- `GET /api/recommendations/trending`
+- `GET /api/recommendations/books/:id/similar`
+
+Admin stats:
+
+- `GET /api/admin/stats`
+- `GET /api/admin/stats/ai-insights`
+
 Other modules:
 
-- `promos`, `reviews`, `wishlist`, `authors`, `genres`, `publishers`, `admin/stats`
+- `promos`, `reviews`, `wishlist`, `authors`, `genres`, `publishers`
 
-## Data Model Chính
+## Data Model
 
-Các model quan trọng:
+Important models:
 
 - `User`: `user_id`, `name`, `email`, `password`, `role`, `phone`, `address`, `avatar`
 - `Book`: `book_id`, `title`, `description`, `publisher_id`, `stock`, `price`, `cover_image`, `release_date`, `isbn`
-- `CartItem`: cart theo `user_id`, `book_id`, `quantity`
+- `CartItem`: `user_id`, `book_id`, `quantity`
 - `Order`: `order_id`, `total_price`, `status`, `payment_method`, `payment_status`, `address`, `phone`, `vnpay_transaction_no`
-- `OrderItem`: snapshot item trong đơn, gồm `quantity`, `price`
-- `PromoCode`: mã giảm giá, phần trăm giảm, min amount, expiry
-- `Review`, `Wishlist`, `Session`, `OtpTemp`
+- `OrderItem`: snapshot item in order, includes `quantity`, `price`
+- `PromoCode`: discount code data
+- `Review`: rating/comment/date
+- `ReviewAnalysis`: AI analysis for a review
+- `BookInsight`: cached AI summary for a book
+- `Wishlist`, `Session`, `OtpTemp`
 - `Author`, `Genre`, `Publisher`
 - Join tables: `BookAuthor`, `BookGenre`
 
-Associations nằm trong `backend/models/associations.js`:
+Associations in `backend/models/associations.js`:
 
 - User hasMany CartItem, Order, Review, Session, Wishlist.
 - Book hasMany CartItem, OrderItem, Review, Wishlist.
+- Review hasOne ReviewAnalysis as `analysis`.
+- Book hasOne BookInsight as `insight`.
 - Order hasMany OrderItem.
 - Order belongsTo PromoCode.
 - Book belongsTo Publisher.
-- Book belongsToMany Author qua `BookAuthor`.
-- Book belongsToMany Genre qua `BookGenre`.
+- Book belongsToMany Author via `BookAuthor`.
+- Book belongsToMany Genre via `BookGenre`.
 
 Order status:
 
@@ -185,52 +210,150 @@ pending, paid, failed
 
 Login:
 
-1. Frontend gọi `POST /api/users/login`.
-2. `authService.login` kiểm tra email/password.
-3. Backend trả access token và user.
-4. Refresh token random được lưu vào bảng `Sessions` và set vào HttpOnly cookie `refreshToken`.
-5. Frontend lưu access token/user bằng Zustand persist trong `useAuthStore`.
+1. Frontend calls `POST /api/users/login`.
+2. `authService.login` checks email/password.
+3. Backend returns access token and user.
+4. Refresh token is stored in `Sessions` and set as HttpOnly cookie `refreshToken`.
+5. Frontend stores access token/user in Zustand persist.
 
 Refresh token:
 
-1. Axios interceptor bắt lỗi `401`.
-2. Gọi `POST /api/users/refresh-token`.
-3. Backend đọc cookie `refreshToken`, kiểm tra bảng `Sessions`.
-4. Trả access token mới.
-5. Frontend cập nhật store và retry request cũ.
+1. Axios interceptor catches `401`.
+2. Calls `POST /api/users/refresh-token`.
+3. Backend reads `refreshToken` cookie and checks `Sessions`.
+4. Returns a new access token.
+5. Frontend updates store and retries request.
 
 Middleware:
 
-- `auth`: yêu cầu Bearer token, set `req.user`.
-- `adminAuth`: yêu cầu `req.user.role === 'admin'`.
-- `optionalAuth`: nếu có token hợp lệ thì set user, nếu không vẫn cho qua.
+- `auth`: requires Bearer token and sets `req.user`.
+- `adminAuth`: requires `req.user.role === 'admin'`.
+- `optionalAuth`: sets user if token exists, otherwise lets request pass.
 
-## Frontend Kiến Trúc
+## Review Flow
 
-Frontend nằm trong `frontend/src`.
+Review create flow:
 
-Các phần chính:
+1. `POST /api/reviews` with `book_id`, `rating`, `comment`.
+2. Service checks book, user, duplicate review, and delivered order ownership.
+3. Review is saved immediately.
+4. AI analysis is queued asynchronously.
+5. Fallback rules run if Groq is missing, disabled, or fails.
+6. Book insight cache is invalidated.
 
-- `main.tsx`: render React app.
-- `App.tsx`: setup `QueryClientProvider` và React Router.
-- `routes/index.tsx`: khai báo route page.
-- `api/`: axios client và API wrapper.
-- `hooks/`: React Query hooks và action hooks.
-- `features/auth/useAuthStore.ts`: Zustand auth store.
+AI review output stored in `ReviewAnalysis`:
+
+- `sentiment_label`
+- `sentiment_score`
+- `confidence`
+- `summary`
+- `signals`
+- `spam_risk`
+- `spam_reasons`
+- `provider`
+- `model`
+- `prompt_version`
+- `raw_response`
+
+Review list responses now include `analysis` when available.
+
+## AI / Groq MVP
+
+Implemented:
+
+- `backend/services/ai/groqClient.js`
+- `backend/services/ai/fallbackSentiment.js`
+- `backend/services/ai/jsonParser.js`
+- `backend/services/ai/reviewAnalysisService.js`
+- `backend/services/ai/bookInsightService.js`
+
+Design rules:
+
+- AI never blocks checkout, payment, auth, or stock.
+- Review save must succeed even if AI fails.
+- Groq is used only for background/lazy analysis and summaries.
+- Output is parsed as JSON only.
+- Fallback rule-based sentiment is used when Groq is unavailable.
+
+## Recommendation System
+
+Implemented as rule-based MVP using:
+
+- average rating
+- average sentiment
+- review count
+- sales count
+- wishlist count
+- genre/author interest match
+- recency
+
+Backend files:
+
+- `backend/services/recommendationService.js`
+- `backend/repositories/recommendationRepository.js`
+- `backend/controllers/recommendationController.js`
+- `backend/routes/recommendations.js`
+- `backend/validators/recommendationValidator.js`
+
+Returned item shape:
+
+```json
+{
+  "book": {},
+  "score": 0.82,
+  "reasons": ["...", "..."],
+  "signals": {}
+}
+```
+
+## Book Insight
+
+`GET /api/books/:id/insights` returns cached or regenerated summary:
+
+- summary
+- positive_points
+- negative_points
+- reader_fit
+- recommendation_hint
+- sentiment_distribution
+- review_count
+
+Cached in `BookInsight`. Cache is invalidated when a new review is added.
+
+## Admin AI Insights
+
+`GET /api/admin/stats/ai-insights` returns:
+
+- books with negative sentiment patterns
+- top positive genres
+- suspicious reviews
+
+## Frontend Structure
+
+Frontend lives in `frontend/src`.
+
+Main parts:
+
+- `main.tsx`: React entry.
+- `App.tsx`: QueryClientProvider and router.
+- `routes/index.tsx`: route definitions.
+- `api/`: axios client and API wrappers.
+- `hooks/`: React Query hooks.
+- `features/auth/useAuthStore.ts`: auth store.
 - `features/cart/useCartStore.ts`: cart store.
 - `pages/`: page-level UI.
-- `components/`: UI tái sử dụng, admin tabs, profile, book, auth forms.
-- `types/`: TypeScript type cho domain.
+- `components/`: reusable UI, admin tabs, profile, book, auth forms.
+- `types/`: TypeScript domain types.
 
 Axios client:
 
-- File: `frontend/src/api/axios.ts`
-- Base URL: `VITE_API_URL` hoặc `http://localhost:3000/api`
-- `withCredentials: true` để gửi refresh cookie.
-- Response interceptor unwrap format backend: nếu `success` true thì trả `data`.
-- Khi `401`, tự gọi refresh token, cập nhật access token và retry.
+- `frontend/src/api/axios.ts`
+- base URL from `VITE_API_URL` or `http://localhost:3000/api`
+- `withCredentials: true`
+- response interceptor unwraps `{ success, data }`
+- `401` triggers refresh token retry
 
-Frontend routes chính:
+Main frontend routes:
 
 - `/`, `/shop`, `/book/:id`
 - `/login`, `/register`, `/reset-password`
@@ -238,35 +361,54 @@ Frontend routes chính:
 - `/order-success`, `/order-failure`
 - `/my-orders`, `/profile`
 - `/admin`
-- collection pages như `/new-releases`, `/bestsellers`, `/deals`, `/genre/:id`
+- collections such as `/new-releases`, `/bestsellers`, `/deals`, `/genre/:id`
 
-## Luồng Cart
+## Frontend AI UI
 
-Files chính:
+Updated files:
+
+- `frontend/src/pages/BookDetailPage.tsx`
+- `frontend/src/components/book/BookReviews.tsx`
+- `frontend/src/components/book/BookInsightPanel.tsx`
+- `frontend/src/components/book/RecommendationShelf.tsx`
+- `frontend/src/pages/Home.tsx`
+- `frontend/src/components/admin/tabs/DashboardTab.tsx`
+
+UI changes:
+
+- review sentiment badge and short summary
+- book insight panel on detail page
+- similar books shelf on book detail
+- personalized recommendations on home
+- admin AI insights panel
+
+## Cart Flow
+
+Main files:
 
 - Backend: `cartController.js`, `cartService.js`, `cartValidator.js`
 - Frontend: `cartApi.ts`, `useCartQuery.ts`, `useCartActions.ts`, `useCartStore.ts`
 
-Luồng thêm cart:
+Add-to-cart flow:
 
-1. Controller gọi `cartValidator.addToCart`.
-2. Validator parse `book_id`, `quantity`; quantity mặc định là `1`.
-3. Service kiểm tra sách tồn tại.
-4. Nếu cart item đã có, cộng quantity.
-5. Kiểm tra tồn kho trước khi save.
-6. Trả cart item kèm thông tin Book.
+1. Controller calls `cartValidator.addToCart`.
+2. Validator parses `book_id`, `quantity`; default `quantity` is `1`.
+3. Service checks book exists.
+4. If cart item exists, quantity is increased.
+5. Stock is checked before save.
+6. Returns cart item with Book data.
 
-Luồng update cart:
+Update flow:
 
-1. Validator cho phép quantity `0`.
-2. Service kiểm tra cart item và book.
-3. Nếu quantity `0` thì xóa item.
-4. Nếu > 0 thì update quantity.
-5. Trả `getCart`.
+1. Validator allows `quantity = 0`.
+2. Service checks cart item and book.
+3. If `quantity = 0`, item is removed.
+4. If `quantity > 0`, item is updated.
+5. Returns `getCart`.
 
-## Luồng COD Order
+## COD Order Flow
 
-Files chính:
+Main files:
 
 - `orderController.js`
 - `orderValidator.js`
@@ -276,35 +418,34 @@ Files chính:
 - `orderRepository.js`
 - `withTransaction.js`
 
-Luồng:
+Flow:
 
-1. Frontend gọi `POST /api/orders` với `payment_method: "COD"`, `address`, `phone`, optional `promo_code`.
-2. Controller parse input bằng `orderValidator.createCodOrder`.
-3. `orderService.createCodOrder` kiểm tra payment method, address/phone.
-4. Trong `withTransaction`:
-   - tìm user
-   - lấy cart items
-   - validate stock bằng `validateCartItemsInStock({ lock: true })`
-   - tính giá bằng `calculateOrderPricing`
-   - tạo `Order` với `status=processing`, `payment_status=pending`
-   - tạo `OrderItem`
-   - trừ kho bằng `decreaseStockForCartItems`
-   - xóa cart
-5. Sau transaction, gửi email xác nhận.
-6. Trả `{ order_id }`.
+1. Frontend calls `POST /api/orders` with `payment_method: "COD"`, `address`, `phone`, optional `promo_code`.
+2. Validator parses input.
+3. Service checks payment method, address, phone.
+4. In transaction:
+   - find user
+   - load cart items
+   - validate stock with row lock
+   - calculate pricing
+   - create order with `status=processing`, `payment_status=pending`
+   - create order items
+   - decrease stock
+   - clear cart
+5. Send confirmation email after transaction.
+6. Return `{ order_id }`.
 
 Cancel COD:
 
-1. User gọi `PUT /api/orders/cancel`.
-2. Validator parse `order_id`.
-3. Service lấy order qua `orderRepository.findOrderForCancel`.
-4. Chỉ cho hủy khi `status=processing`.
-5. Set `status=cancelled`.
-6. Hoàn kho bằng `restoreStockForOrderItems`.
+1. User calls `PUT /api/orders/cancel`.
+2. Service loads order by `orderRepository.findOrderForCancel`.
+3. Only `processing` orders can be cancelled.
+4. Set `status=cancelled`.
+5. Restore stock from order items.
 
-## Luồng VNPay
+## VNPay Flow
 
-Files chính:
+Main files:
 
 - `paymentController.js`
 - `paymentValidator.js`
@@ -316,273 +457,134 @@ Files chính:
 
 Create payment URL:
 
-1. Frontend gọi `POST /api/payment/create_payment_url`.
-2. Controller parse input bằng `paymentValidator.createVnpayPayment`.
-3. `paymentService.createVnpayPayment` chạy trong transaction.
-4. Lấy cart items của user.
-5. Tìm các order VNPay cũ của user có `status=pending_payment`, `payment_status=pending`.
-6. Các pending order cũ được release:
-   - hoàn kho
-   - set `status=cancelled`
-   - set `payment_status=failed`
-7. Validate stock cart hiện tại với row lock.
-8. Tính giá/promo qua `calculateOrderPricing`.
-9. Tạo order mới:
-   - `payment_method=VNPay`
-   - `status=pending_payment`
-   - `payment_status=pending`
-10. Tạo order items.
-11. Trừ kho.
-12. Tạo URL VNPay bằng `vnpayService.createPaymentUrl`.
+1. Frontend calls `POST /api/payment/create_payment_url`.
+2. Validator parses input.
+3. Service runs in transaction.
+4. Load cart items.
+5. Release old pending VNPay orders for the user.
+6. Validate stock with row lock.
+7. Calculate pricing and promo.
+8. Create new order with `payment_method=VNPay`, `status=pending_payment`, `payment_status=pending`.
+9. Create order items.
+10. Decrease stock.
+11. Generate VNPay URL.
 
 VNPay return:
 
-1. VNPay redirect về `GET /api/payment/vnpay_return`.
-2. `vnpayService.verifyReturnParams` kiểm tra chữ ký.
-3. Signature invalid: redirect frontend `/order-failure?code=97`.
-4. Order not found: redirect failure `code=01`.
-5. Idempotency:
-   - nếu `payment_status=paid`: redirect success
-   - nếu order `cancelled` hoặc `payment_status=failed`: redirect failure rõ ràng
-   - chỉ xử lý khi `status=pending_payment` và `payment_status=pending`
-6. Nếu `vnp_ResponseCode === "00"`:
-   - set `status=processing`
-   - set `payment_status=paid`
-   - lưu `vnpay_transaction_no`
-   - xóa cart
-   - gửi email xác nhận sau transaction
-   - redirect `/order-success?code=00&orderId=...`
-7. Nếu fail:
-   - hoàn kho
-   - set `status=cancelled`
-   - set `payment_status=failed`
-   - lưu `vnpay_transaction_no` nếu có
-   - redirect `/order-failure?code=...`
+1. VNPay redirects to `GET /api/payment/vnpay_return`.
+2. Signature is verified.
+3. Invalid signature redirects to failure.
+4. Idempotency is enforced.
+5. `vnp_ResponseCode === "00"` sets order to `processing/paid`, stores transaction no, clears cart, sends confirmation email.
+6. Failure restores stock, marks order `cancelled/failed`, and redirects to failure.
 
-Điểm quan trọng sau refactor:
+Important after refactor:
 
-- VNPay fail/expired không hard delete order nữa.
-- Duplicate pending VNPay order được release trước khi tạo order mới.
-- Callback idempotent, không redirect success sai cho order chưa paid.
+- VNPay fail/expired does not hard delete orders.
+- Duplicate pending VNPay orders are released before a new one is created.
+- Callback is idempotent.
 
-## Pricing, Promo Và Inventory
+## Pricing, Promo, Inventory
 
-Pricing:
+Pricing file:
 
-- File: `backend/services/orderPricingService.js`
-- API:
-  - `calculateCartSubtotal(cartItems)`
-  - `applyPromoCode({ promoCode, subtotal })`
-  - `calculateOrderPricing({ cartItems, promoCode })`
+- `backend/services/orderPricingService.js`
 
-Behavior promo:
+API:
 
-- Không có promo: giữ nguyên subtotal.
-- Promo hết hạn, không tồn tại hoặc chưa đủ `min_amount`: bỏ qua promo, không throw.
-- Promo hợp lệ: tính discount percent, trả `totalPrice`, `promoId`, `discountAmount`.
+- `calculateCartSubtotal(cartItems)`
+- `applyPromoCode({ promoCode, subtotal })`
+- `calculateOrderPricing({ cartItems, promoCode })`
 
-Inventory:
+Promo behavior:
 
-- File: `backend/services/inventoryService.js`
-- API:
-  - `validateCartItemsInStock({ cartItems, transaction, lock })`
-  - `decreaseStockForCartItems({ cartItems, transaction })`
-  - `restoreStockForOrderItems({ orderItems, transaction })`
+- No promo: subtotal stays unchanged.
+- Expired / missing / below minimum amount promo: ignored silently.
+- Valid promo: discount percent is applied.
 
-Quy tắc:
+Inventory file:
 
-- COD và VNPay checkout đều lock row book khi validate stock.
-- Trừ kho chỉ qua `decreaseStockForCartItems`.
-- Hoàn kho khi cancel/payment fail/expired qua `restoreStockForOrderItems`.
+- `backend/services/inventoryService.js`
+
+API:
+
+- `validateCartItemsInStock({ cartItems, transaction, lock })`
+- `decreaseStockForCartItems({ cartItems, transaction })`
+- `restoreStockForOrderItems({ orderItems, transaction })`
+
+Rules:
+
+- COD and VNPay checkout both lock book rows when validating stock.
+- Stock is only decreased through helper.
+- Stock is restored on cancel / payment fail / expired pending payment.
 
 ## Scheduler
 
-File: `backend/utils/orderScheduler.js`
+File:
 
-Cron chạy mỗi giờ:
+- `backend/utils/orderScheduler.js`
 
-1. Gọi `paymentService.cleanupExpiredPendingPayments`.
-   - Tìm order `pending_payment/pending` quá 15 phút.
-   - Hoàn kho.
-   - Set `cancelled/failed`.
-2. Đơn `processing` quá 2 ngày chuyển sang `shipped`.
-3. Đơn `shipped` quá 4 ngày chuyển sang `delivered`.
-4. COD khi delivered được set `payment_status=paid`.
+Runs hourly:
 
-## Repository Layer
-
-Hiện chỉ có:
-
-- `backend/repositories/orderRepository.js`
-
-Repository này gom các query order include dài:
-
-- `findUserOrders`
-- `findUserOrdersWithTimelineData`
-- `findAllOrdersPaginated`
-- `findOrderDetailById`
-- `findOrderForCancel`
-- `findOrderForConfirmationEmail`
-
-Service vẫn giữ:
-
-- mapping response
-- permission user/admin
-- rule nghiệp vụ
-- transaction orchestration
+1. Calls `paymentService.cleanupExpiredPendingPayments`.
+   - finds `pending_payment/pending` orders older than 15 minutes
+   - restores stock
+   - marks them `cancelled/failed`
+2. Orders in `processing` for more than 2 days become `shipped`.
+3. Orders in `shipped` for more than 4 days become `delivered`.
+4. COD delivered orders get `payment_status=paid`.
 
 ## Validator Layer
 
-Hiện có:
+Current validators:
 
 - `validators/common.js`
 - `validators/cartValidator.js`
 - `validators/orderValidator.js`
 - `validators/paymentValidator.js`
+- `validators/recommendationValidator.js`
 
-Nguyên tắc:
+Principles:
 
-- Validator chỉ parse/validate input HTTP.
-- Validator không query DB.
-- Service vẫn throw `AppError` cho rule cần DB như stock, user/order tồn tại, permission.
+- Validators only parse/validate HTTP input.
+- Validators do not query DB.
+- Business rules that need DB stay in services and throw `AppError`.
 
-## Book/Catalog Module
+## Current Refactor Status
 
-Files chính:
+Done:
 
-- `bookController.js`
-- `bookService.js`
-- `catalogService.js`
-- routes `books`, `authors`, `genres`, `publishers`
+- VNPay return hardening
+- duplicate pending VNPay cleanup
+- pricing/promo split
+- inventory helpers
+- transaction helper
+- order repository
+- cart/order/payment validators
+- AI foundation and fallback sentiment
+- review analysis persistence
+- book insight cache
+- recommendation MVP
 
-Book features:
+Verification:
 
-- search keyword theo title
-- filter price
-- filter genre/author bằng ID hoặc name
-- filter rating trung bình
-- sort price asc/desc, newest, top-rated
-- pagination
-- detail book có authors, genres, publisher, reviews
-- admin CRUD book, upload cover qua multer temp file và Cloudinary
+- Backend `node --check`: pass
+- Frontend `npm run build`: pass
+- ESLint on touched frontend files: pass
+- Full frontend lint still has many pre-existing errors in untouched files
 
-Lưu ý:
+Important files to know:
 
-- `bookService.js` vẫn đang chứa nhiều logic query/filter khá lớn.
-- Nếu tiếp tục refactor, đây là ứng viên tách repository/helper tiếp theo.
-
-## Promo Module
-
-Files:
-
-- `promoController.js`
-- `promoService.js`
-- `orderPricingService.js`
-
-Admin tạo/list promo.
-
-Customer check promo qua:
-
-- `POST /api/promos/by-code`
-
-Checkout COD/VNPay không dùng trực tiếp `promoService`; nó dùng `orderPricingService` để giữ behavior im lặng bỏ qua promo không hợp lệ.
-
-## Review Và Wishlist
-
-Review:
-
-- Service kiểm tra user chỉ review sách đã mua với order delivered.
-- Có list review theo book.
-
-Wishlist:
-
-- Toggle add/remove wishlist.
-- Get wishlist của user kèm thông tin book/authors.
-
-## Admin
-
-Admin route dùng `auth` + `adminAuth`.
-
-Admin features hiện có:
-
-- quản lý books, authors, genres, publishers
-- quản lý promos
-- quản lý orders và update status
-- xem stats dashboard
-- xem users
-
-Frontend admin:
-
-- `frontend/src/pages/AdminPage.tsx`
-- `frontend/src/components/admin/tabs/*`
-- hooks `useAdmin*`
-
-## Quy Ước Và Lưu Ý Khi Code Tiếp
-
-- Không đổi route path hoặc response field nếu không kiểm tra frontend.
-- Controller nên mỏng: lấy input, gọi validator/service, trả response.
-- Service không dùng `req`, `res`, `next`.
-- Lỗi nghiệp vụ dùng `AppError`.
-- Route async phải bọc `asyncHandler`.
-- Query include dài nên đưa vào repository nếu làm service khó đọc.
-- Transaction mới nên dùng `withTransaction`.
-- Logic stock nên dùng `inventoryService`.
-- Logic pricing/promo checkout nên dùng `orderPricingService`.
-- Input mới nên thêm validator trước khi vào service.
-- Cẩn thận với worktree có thay đổi sẵn; không revert thay đổi không liên quan.
-
-## Verification
-
-Syntax check backend:
-
-```powershell
-Get-ChildItem -Path backend -Recurse -File -Include *.js,*.cjs |
-  Where-Object { $_.FullName -notmatch '\\node_modules\\' } |
-  ForEach-Object { node --check $_.FullName }
-```
-
-Frontend:
-
-```powershell
-cd frontend
-npm run build
-npm run lint
-```
-
-Manual test quan trọng:
-
-- Auth: login, refresh token, logout.
-- Cart: add, update, remove, get.
-- COD: create order, out of stock, cancel.
-- VNPay: create payment URL, success callback, failed callback, duplicate callback.
-- Scheduler: expired pending VNPay order hoàn kho và mark failed.
-- Orders: user chỉ xem order của mình, admin xem tất cả.
-- Admin: CRUD book, update order status, promo.
-
-## Trạng Thái Refactor Hiện Tại
-
-Đã làm:
-
-- Phase 1: harden VNPay return handling.
-- Phase 2: prevent duplicate pending VNPay orders.
-- Phase 3: tách pricing/promo logic.
-- Phase 4: tách inventory helpers.
-- Phase 5: thêm transaction helper.
-- Phase 6: tách order repository.
-- Phase 7: thêm validators cho cart/order/payment.
-
-Chưa xác nhận trong session này:
-
-- Manual test end-to-end thật với DB/VNPay sandbox.
-- Frontend build/lint sau toàn bộ refactor.
-
-Các file refactor quan trọng:
-
-- `backend/services/paymentService.js`
-- `backend/services/orderService.js`
-- `backend/services/orderPricingService.js`
-- `backend/services/inventoryService.js`
-- `backend/utils/withTransaction.js`
-- `backend/repositories/orderRepository.js`
-- `backend/validators/*`
-- `backend/REFACTOR_NEXT_STEPS_PLAN.md`
+- `backend/services/ai/*`
+- `backend/services/reviewService.js`
+- `backend/services/bookService.js`
+- `backend/services/recommendationService.js`
+- `backend/repositories/reviewRepository.js`
+- `backend/repositories/recommendationRepository.js`
+- `backend/models/ReviewAnalysis.js`
+- `backend/models/BookInsight.js`
+- `backend/routes/recommendations.js`
+- `backend/migrations/20260507090000-create-review-analyses.cjs`
+- `backend/migrations/20260507091000-create-book-insights.cjs`
+- `frontend/src/components/book/BookInsightPanel.tsx`
+- `frontend/src/components/book/RecommendationShelf.tsx`

@@ -1,14 +1,41 @@
 // src/components/admin/tabs/DashboardTab.tsx
-import { useAdminStats } from '@/hooks/useAdmin';
-import { DollarSign, UserPlus, ShoppingBag, TrendingUp, PackageOpen, MoreVertical, Loader2 } from 'lucide-react';
+import { useAdminAiInsights, useAdminStats } from '@/hooks/useAdmin';
+import { AlertTriangle, Brain, DollarSign, UserPlus, ShoppingBag, TrendingUp, PackageOpen, MoreVertical, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 // Import Recharts
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 // Import formatPrice util
 import { formatPrice } from '@/lib/utils';
+import type { ReactNode } from 'react';
+
+interface StatCardProps {
+    title: string;
+    value: string;
+    trend: string;
+    icon: ReactNode;
+    bgIcon: string;
+    trendColor: string;
+}
+
+interface CategoryBarProps {
+    label: string;
+    percent: string;
+    color: string;
+    width: string;
+}
+
+interface OrderRow {
+    order_id: number;
+    total_price: number;
+    status: string;
+    order_date: string;
+    User?: { name?: string };
+    OrderItems: Array<{ Book?: { title?: string } }>;
+}
 
 export function DashboardTab() {
     const { data: stats, isLoading, isError } = useAdminStats();
+    const { data: aiInsights } = useAdminAiInsights();
 
     if (isLoading) {
         return (
@@ -144,6 +171,61 @@ export function DashboardTab() {
                 </div>
             </div>
 
+            {aiInsights && (
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div className="rounded-xl border border-stone-200 bg-white p-6 shadow-sm lg:col-span-2">
+                        <div className="flex items-center gap-2 mb-4">
+                            <Brain className="w-5 h-5 text-[#00796B]" />
+                            <h3 className="text-stone-900 font-bold">AI Review Insights</h3>
+                        </div>
+                        <div className="grid sm:grid-cols-2 gap-4">
+                            <InsightMiniList
+                                title="Books needing attention"
+                                empty="No negative sentiment pattern yet"
+                                items={aiInsights.negative_review_books.map((book) => ({
+                                    key: book.book_id,
+                                    label: book.title,
+                                    value: `${book.negative_reviews}/${book.analyzed_reviews} negative`
+                                }))}
+                            />
+                            <InsightMiniList
+                                title="Top positive genres"
+                                empty="No analyzed genre data yet"
+                                items={aiInsights.top_positive_genres.map((genre) => ({
+                                    key: genre.genre_id,
+                                    label: genre.name,
+                                    value: `Sentiment ${genre.avg_sentiment}`
+                                }))}
+                            />
+                        </div>
+                    </div>
+
+                    <div className="rounded-xl border border-stone-200 bg-white p-6 shadow-sm">
+                        <div className="flex items-center gap-2 mb-4">
+                            <AlertTriangle className="w-5 h-5 text-amber-600" />
+                            <h3 className="text-stone-900 font-bold">Suspicious Reviews</h3>
+                        </div>
+                        {aiInsights.suspicious_reviews.length > 0 ? (
+                            <div className="space-y-3">
+                                {aiInsights.suspicious_reviews.slice(0, 4).map((review) => (
+                                    <div key={review.review_id} className="border-b border-stone-100 pb-3 last:border-0">
+                                        <p className="text-sm font-semibold text-stone-800 truncate">
+                                            {review.book?.title || 'Unknown book'}
+                                        </p>
+                                        <p className="text-xs text-stone-500 truncate">{review.comment}</p>
+                                        <span className="mt-1 inline-flex rounded-full bg-amber-50 px-2 py-0.5 text-xs font-bold text-amber-700 capitalize">
+                                            {review.spam_risk}
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <p className="text-sm text-stone-500">No suspicious reviews detected.</p>
+                        )}
+                    </div>
+                </div>
+            )}
+
             {/* RECENT ORDERS TABLE */}
             <div className="rounded-xl border border-stone-200 bg-white shadow-sm overflow-hidden">
                 <div className="flex items-center justify-between px-6 py-4 border-b border-stone-200">
@@ -186,7 +268,7 @@ export function DashboardTab() {
 
 // --- SUB COMPONENTS ---
 
-function StatCard({ title, value, trend, icon, bgIcon, trendColor }: any) {
+function StatCard({ title, value, trend, icon, bgIcon, trendColor }: StatCardProps) {
     return (
         <div className="flex flex-col gap-2 rounded-xl p-5 bg-white border border-stone-200 shadow-sm hover:shadow-md transition-shadow">
             <div className="flex justify-between items-start">
@@ -201,7 +283,7 @@ function StatCard({ title, value, trend, icon, bgIcon, trendColor }: any) {
     );
 }
 
-function CategoryBar({ label, percent, color, width }: any) {
+function CategoryBar({ label, percent, color, width }: CategoryBarProps) {
     return (
         <div className="group">
             <div className="flex justify-between text-sm mb-1">
@@ -215,8 +297,8 @@ function CategoryBar({ label, percent, color, width }: any) {
     );
 }
 
-function TableRow({ order }: { order: any }) {
-    const statusColors: any = {
+function TableRow({ order }: { order: OrderRow }) {
+    const statusColors: Record<string, string> = {
         delivered: "bg-green-100 text-green-800",
         processing: "bg-yellow-100 text-yellow-800",
         shipped: "bg-blue-100 text-blue-800",
@@ -257,5 +339,33 @@ function TableRow({ order }: { order: any }) {
                 </button>
             </td>
         </tr>
+    );
+}
+
+function InsightMiniList({
+    title,
+    empty,
+    items
+}: {
+    title: string;
+    empty: string;
+    items: Array<{ key: number; label: string; value: string }>;
+}) {
+    return (
+        <div className="space-y-3">
+            <h4 className="text-sm font-bold text-stone-700">{title}</h4>
+            {items.length > 0 ? (
+                <div className="space-y-2">
+                    {items.slice(0, 4).map((item) => (
+                        <div key={item.key} className="rounded-lg bg-stone-50 px-3 py-2">
+                            <p className="text-sm font-semibold text-stone-800 truncate">{item.label}</p>
+                            <p className="text-xs text-stone-500">{item.value}</p>
+                        </div>
+                    ))}
+                </div>
+            ) : (
+                <p className="text-sm text-stone-500">{empty}</p>
+            )}
+        </div>
     );
 }

@@ -4,11 +4,13 @@ import { Header } from '@/layouts/Header';
 import { Footer } from '@/layouts/Footer';
 import { BookDetailCard } from '@/components/book/BookDetailCard';
 import { BookReviews } from '@/components/book/BookReviews';
+import { BookInsightPanel } from '@/components/book/BookInsightPanel';
+import { RecommendationShelf } from '@/components/book/RecommendationShelf';
 import { useParams, Link } from 'react-router-dom';
-import { useBookDetail, useTopRatedBooks } from '@/hooks/useBooks';
+import { useBookDetail, useBookInsights } from '@/hooks/useBooks';
+import { useSimilarBooks } from '@/hooks/useRecommendations';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
-import { BookCard } from '@/components/book/BookCard';
 import { cn } from '@/lib/utils';
 
 export default function BookDetailPage() {
@@ -25,7 +27,8 @@ function BookDetailPageContent() {
     const { id } = useParams<{ id: string }>();
     const bookId = Number(id);
     const { data: book, error } = useBookDetail(bookId);
-    const { data: relatedBooks } = useTopRatedBooks();
+    const { data: insight, isLoading: loadingInsight } = useBookInsights(bookId);
+    const { data: similarBooks, isLoading: loadingSimilar } = useSimilarBooks(bookId, 8);
     const [activeTab, setActiveTab] = useState<'desc' | 'reviews'>('desc');
 
     if (error || !book) return <p className="text-center py-10">Không tìm thấy sách!</p>;
@@ -85,7 +88,8 @@ function BookDetailPageContent() {
                         )}
 
                         {activeTab === 'reviews' && (
-                            <div id="reviews">
+                            <div id="reviews" className="space-y-8">
+                                <BookInsightPanel insight={insight} isLoading={loadingInsight} />
                                 <BookReviews bookId={ book.book_id} reviews={book.reviews} />
                             </div>
                         )}
@@ -94,12 +98,7 @@ function BookDetailPageContent() {
 
                 {/* Related Books */}
                 <div className="mt-12 mb-12">
-                    <h3 className="text-2xl font-bold font-display text-[#2F4F4F] mb-6">Related Books</h3>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
-                        {relatedBooks?.slice(0, 4).map((relatedBook) => (
-                            <BookCard key={relatedBook.book_id} book={relatedBook} />
-                        ))}
-                    </div>
+                    <RecommendationShelf title="Readers also liked" items={similarBooks} isLoading={loadingSimilar} />
                 </div>
 
             </main>

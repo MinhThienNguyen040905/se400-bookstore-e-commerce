@@ -25,4 +25,23 @@ export interface CardBook {
     authors: string;
     price: number;
     cover_image: string;
+    avg_rating?: number;
+    genres?: string;
+}
+
+export interface BookInsight {
+    book_id: number;
+    summary: string;
+    positive_points: string[];
+    negative_points: string[];
+    reader_fit: string;
+    recommendation_hint: string;
+    sentiment_distribution: {
+        positive: number;
+        neutral: number;
+        negative: number;
+    };
+    review_count: number;
+    provider: string;
+    generated_at?: string;
 }

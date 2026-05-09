@@ -1,5 +1,5 @@
 import api from './axios';
-import type { CardBook, Book } from '@/types/book';
+import type { CardBook, Book, BookInsight } from '@/types/book';
 
 export const getNewReleases = async (): Promise<CardBook[]> => {
     const { data } = await api.get('/books/new-releases');
@@ -13,5 +13,10 @@ export const getTopRated = async (): Promise<CardBook[]> => {
 
 export const getBookById = async (id: number): Promise<Book> => {
     const { data } = await api.get(`/books/${id}`);
+    return data;
+};
+
+export const getBookInsights = async (id: number): Promise<BookInsight> => {
+    const { data } = await api.get(`/books/${id}/insights`);
     return data;
 };

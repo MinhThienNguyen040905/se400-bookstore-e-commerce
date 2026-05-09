@@ -17,6 +17,18 @@ interface BookReviewsProps {
     className?: string;
 }
 
+const sentimentStyles = {
+    positive: 'bg-green-50 text-green-700 border-green-100',
+    neutral: 'bg-stone-50 text-stone-600 border-stone-100',
+    negative: 'bg-red-50 text-red-700 border-red-100',
+};
+
+const sentimentText = {
+    positive: 'Positive',
+    neutral: 'Neutral',
+    negative: 'Negative',
+};
+
 export function BookReviews({ bookId, reviews, className }: BookReviewsProps) {
     const { user } = useAuthStore();
     const navigate = useNavigate();
@@ -41,8 +53,9 @@ export function BookReviews({ bookId, reviews, className }: BookReviewsProps) {
             // Refresh book data to show the new review
             queryClient.invalidateQueries({ queryKey: ['book', bookId] });
         },
-        onError: (error: any) => {
-            const msg = error.response?.data?.message || error.response?.data?.msg || 'Failed to submit review';
+        onError: (error: unknown) => {
+            const err = error as { response?: { data?: { message?: string; msg?: string }; status?: number } };
+            const msg = err.response?.data?.message || err.response?.data?.msg || 'Failed to submit review';
 
             // Handle specific backend errors
             if (msg.toLowerCase().includes('already reviewed')) {
@@ -50,7 +63,7 @@ export function BookReviews({ bookId, reviews, className }: BookReviewsProps) {
                 // Refresh to update UI state if needed
                 queryClient.invalidateQueries({ queryKey: ['book', bookId] });
             }
-            else if (error.response?.status === 403) {
+            else if (err.response?.status === 403) {
                 showToast.error('You can only review books from delivered orders.');
             }
             else {
@@ -227,12 +240,25 @@ export function BookReviews({ bookId, reviews, className }: BookReviewsProps) {
                                                 )}
                                             />
                                         ))}
+                                        {review.analysis?.sentiment_label && (
+                                            <span className={cn(
+                                                "ml-2 inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-bold",
+                                                sentimentStyles[review.analysis.sentiment_label]
+                                            )}>
+                                                {sentimentText[review.analysis.sentiment_label]}
+                                            </span>
+                                        )}
                                     </div>
 
                                     {/* Comment */}
                                     <p className="text-stone-600 leading-relaxed text-sm md:text-base pt-1">
                                         {review.comment}
                                     </p>
+                                    {review.analysis?.summary && (
+                                        <p className="text-xs text-stone-500 bg-stone-50 rounded-lg px-3 py-2">
+                                            {review.analysis.summary}
+                                        </p>
+                                    )}
                                 </div>
                             </div>
                         ))}

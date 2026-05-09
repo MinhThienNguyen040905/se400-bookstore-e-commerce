@@ -21,6 +21,7 @@ import genreRoutes from './routes/genres.js';
 import authorRoutes from './routes/authors.js';
 import publisherRoutes from './routes/publishers.js';
 import paymentRoutes from './routes/payment.js';
+import recommendationRoutes from './routes/recommendations.js';
 
 const app = express();
 
@@ -42,6 +43,7 @@ app.use('/api/authors', authorRoutes);
 app.use('/api/publishers', publisherRoutes);
 app.use('/api/genres', genreRoutes);
 app.use('/api/payment', paymentRoutes);
+app.use('/api/recommendations', recommendationRoutes);
 app.use(errorHandler);
 
 // Sync DB and start server

@@ -5,15 +5,23 @@ import { Footer } from '@/layouts/Footer';
 import { BookCard } from '@/components/book/BookCard';
 import { useNewReleasesBooks, useTopRatedBooks } from '@/hooks/useBooks'; // Import cả 2 hooks
 import { useGenres } from '@/hooks/useGenres';
+import { usePersonalizedRecommendations } from '@/hooks/useRecommendations';
+import { RecommendationShelf } from '@/components/book/RecommendationShelf';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
 
+interface GenreItem {
+    genre_id: number;
+    name: string;
+}
+
 export default function Home() {
     // Gọi 2 API riêng biệt
     const { data: newReleases, isLoading: loadingNew } = useNewReleasesBooks();
     const { data: topRatedBooks, isLoading: loadingTop } = useTopRatedBooks();
+    const { data: recommendations, isLoading: loadingRecommendations } = usePersonalizedRecommendations(10);
 
     const { data: genres = [], isLoading: loadingGenres } = useGenres();
     const navigate = useNavigate();
@@ -120,7 +128,7 @@ export default function Home() {
                             className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide scroll-smooth snap-x"
                             style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
                         >
-                            {genres.map((genre: any) => (
+                            {genres.map((genre: GenreItem) => (
                                 <div
                                     key={genre.genre_id}
                                     onClick={() => navigate(`/genre/${genre.genre_id}`, { state: { title: genre.name } })}
@@ -134,6 +142,14 @@ export default function Home() {
                                 </div>
                             ))}
                         </div>
+                    </section>
+
+                    <section className="mb-16">
+                        <RecommendationShelf
+                            title="Recommended for you"
+                            items={recommendations}
+                            isLoading={loadingRecommendations}
+                        />
                     </section>
 
                     {/* --- SECTION 1: NEW RELEASES --- */}

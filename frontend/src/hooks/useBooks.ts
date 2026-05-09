@@ -1,7 +1,7 @@
 // src/hooks/useBooks.ts
 import { useQuery } from '@tanstack/react-query';
-import { getNewReleases, getTopRated, getBookById } from '@/api/booksApi.ts';
-import type { Book, CardBook } from '@/types/book';
+import { getNewReleases, getTopRated, getBookById, getBookInsights } from '@/api/booksApi.ts';
+import type { Book, BookInsight, CardBook } from '@/types/book';
 
 // Hook cho Selected books
 export const useNewReleasesBooks = () => {
@@ -29,6 +29,15 @@ export const useBookDetail = (id: number) => {
         queryFn: () => getBookById(id),
         enabled: !!id, // Chỉ gọi khi có id
         staleTime: 10 * 60 * 1000, // Cache 10 phút
+    });
+};
+
+export const useBookInsights = (id: number) => {
+    return useQuery<BookInsight, Error>({
+        queryKey: ['book-insights', id],
+        queryFn: () => getBookInsights(id),
+        enabled: !!id,
+        staleTime: 5 * 60 * 1000,
     });
 };
 

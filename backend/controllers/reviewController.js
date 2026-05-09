@@ -17,12 +17,12 @@ const addReview = async (req, res) => {
 
 const getReviewsByBook = async (req, res) => {
     const reviews = await reviewService.getReviewsByBook({ bookId: req.params.book_id });
-    res.json(reviews);
+    res.success(reviews, 'Lay danh sach danh gia thanh cong');
 };
 
 const getAllReviews = async (req, res) => {
     const reviews = await reviewService.getAllReviews();
-    res.json(reviews);
+    res.success(reviews, 'Lay danh sach danh gia thanh cong');
 };
 
 export default { addReview, getReviewsByBook, getAllReviews };
