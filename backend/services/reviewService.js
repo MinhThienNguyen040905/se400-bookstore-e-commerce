@@ -54,4 +54,16 @@ const getReviewsByBook = async ({ bookId }) => reviewRepository.findReviewsByBoo
 
 const getAllReviews = async () => reviewRepository.findAllReviews();
 
-export default { addReview, getReviewsByBook, getAllReviews };
+const reanalyzeReview = async ({ reviewId }) => {
+    const result = await reviewAnalysisService.analyzeAndStoreReview(reviewId);
+    if (!result) throw new AppError('Review khong ton tai', 404);
+
+    const review = await Review.findByPk(reviewId, { attributes: ['book_id'] });
+    if (review?.book_id) {
+        await bookInsightService.invalidateBookInsights(review.book_id);
+    }
+
+    return result;
+};
+
+export default { addReview, getReviewsByBook, getAllReviews, reanalyzeReview };

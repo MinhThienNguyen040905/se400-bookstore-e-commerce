@@ -14,7 +14,10 @@ const ReviewAnalysis = sequelize.define('ReviewAnalysis', {
     provider: { type: DataTypes.STRING(50), allowNull: false, defaultValue: 'fallback' },
     model: DataTypes.STRING(100),
     prompt_version: { type: DataTypes.STRING(50), allowNull: false, defaultValue: 'review-sentiment-v1' },
-    raw_response: DataTypes.JSON
+    raw_response: DataTypes.JSON,
+    aspects: DataTypes.JSON,
+    ensemble_agreement: DataTypes.DECIMAL(3, 2),
+    ensemble_sources: DataTypes.JSON
 });
 
 export default ReviewAnalysis;

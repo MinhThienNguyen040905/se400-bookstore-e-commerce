@@ -237,6 +237,18 @@ ReviewAnalyses
 
 Khuyến nghị: dùng Option B nếu muốn sạch và audit được model/prompt. Dùng Option A nếu muốn demo nhanh.
 
+Đã triển khai Option B với migration mở rộng để hỗ trợ ensemble + aspect-based:
+
+```txt
+ReviewAnalyses (đã thêm)
+- aspects JSON                 -- aspect-based sentiment cho 5 khia canh co dinh
+- ensemble_agreement DECIMAL   -- diem dong thuan giua Groq + rule + rating
+- ensemble_sources JSON        -- label cua tung nguon trong vote
++ index tren sentiment_label, spam_risk
+```
+
+Aspect keys cố định: `content_quality`, `translation`, `print_quality`, `shipping`, `price_value`. Mỗi key có giá trị `positive | neutral | negative | none`.
+
 ### 4.3. Environment Variables
 
 Thêm vào backend `.env`:
@@ -722,3 +734,118 @@ Lý do:
 - Recommendation rule-based nhanh có giá trị demo.
 - Summary/admin insight đẹp nhưng nên dựa trên dữ liệu sentiment đã lưu.
 - Model riêng chỉ đáng làm sau khi đã có đủ review thật.
+
+## 14. Cập Nhật Theo Paper Bellar 2024
+
+Phần này ghi nhận các bổ sung được thực hiện sau khi đối chiếu với bài báo *"Sentiment Analysis: Predicting Product Reviews for E-Commerce Recommendations"* (Bellar et al., 2024). Mỗi bổ sung bám sát một finding cụ thể của paper.
+
+### 14.1. Ensemble Vote (paper Section 4.4)
+
+Paper kết luận **CNN+RNN+Bi-LSTM ensemble vượt mọi mô hình đơn lẻ** (96.2% vs 94.85%). Project áp dụng tinh thần này bằng vote 3 nguồn cho mỗi review:
+
+- `groq` (LLM, weight 0.5) — nguồn chính nếu có.
+- `rule` (rule-based fallback từ keyword tiếng Việt, weight 0.2).
+- `rating` (rating-derived label: 4-5 → positive, 3 → neutral, 1-2 → negative, weight 0.3).
+
+Output:
+
+```json
+{
+  "sentiment_label": "positive",          // nhan thang trong vote
+  "sentiment_score": 0.78,                 // weighted average score
+  "ensemble_agreement": 0.85,              // ti le dong thuan
+  "ensemble_sources": {
+    "groq": "positive",
+    "rule": "positive",
+    "rating": "positive"
+  }
+}
+```
+
+Khi `ensemble_agreement < 0.6` → confidence thấp, admin nên review lại. Đây cũng là tín hiệu phụ cho spam detection.
+
+File: `backend/services/ai/ensembleVote.js`.
+
+### 14.2. Aspect-Based Sentiment (paper Section 2.1)
+
+Paper liệt kê 3 mức phân tích: **document / sentence / aspect-level**. Project bổ sung aspect-level với schema cố định 5 khía cạnh để admin lọc được use case như "rating cao nhưng `print_quality=negative` chiếm 30%".
+
+Aspect keys: `content_quality`, `translation`, `print_quality`, `shipping`, `price_value`. Mỗi key: `positive | neutral | negative | none`.
+
+Prompt LLM được mở rộng để trả về object `aspects`. Fallback rule-based set tất cả về `none` (không thể tự suy ra aspect từ keyword đơn giản).
+
+### 14.3. Pre-processing & Vietnamese-Explicit Prompt (paper Section 3.2 + Section 5 limitation)
+
+Paper Section 3.2 nhấn mạnh canonicalization (lowercase, strip stopwords, tokenize, lemmatize). Section 5 thừa nhận paper chỉ test tiếng Anh, gợi ý PhoBERT cho non-English.
+
+Project bổ sung:
+
+- `normalizeText()` (NFC, strip zero-width, dồn whitespace, giảm ký tự lặp `aaaaaa` → `aaa`, dồn punctuation `!!!!!!` → `!!`) — file `backend/services/ai/sanitize.js`.
+- Prompt khai báo rõ:
+  - `Language: Vietnamese (may include teencode, slang, regional words, mixed English)`.
+  - Hướng dẫn xử lý phủ định: `khong tot`, `chua hay` flip sentiment.
+- PII sanitize trước khi gửi: email / URL / phone VN / credit card.
+
+### 14.4. Time-Window Trend (plan Section 3.5)
+
+Plan đã yêu cầu *"Book A có 35% review tiêu cực trong 7 ngày gần đây"*. Endpoint `GET /api/admin/stats/ai-insights` mở rộng:
+
+```txt
+GET /api/admin/stats/ai-insights?windowDays=7&suspiciousLimit=10
+```
+
+Response thêm:
+
+- `window_days`: window được dùng (clamp 1–90).
+- `negative_review_books[]`: thêm `negative_reviews_recent`, `analyzed_reviews_recent`, `negative_ratio_recent`.
+- `rating_sentiment_mismatch[]`: sách `avg_rating >= 4` nhưng `avg_sentiment < 0`.
+- `sentiment_trend[]`: theo ngày trong window (positive/neutral/negative).
+- `top_keywords[]`: signals xuất hiện nhiều nhất trong window, kèm phân bố sentiment.
+
+### 14.5. Admin Re-analyze Endpoint (plan Section 5.1)
+
+```txt
+POST /api/reviews/:id/analyze
+Auth: admin
+```
+
+Cho phép admin chạy lại sentiment analysis cho review cụ thể (ví dụ sau khi đổi `prompt_version` hoặc khi disagreement cao). Tự động invalidate `BookInsight` của sách liên quan.
+
+### 14.6. Eval Pipeline (paper Section 4 — metrics)
+
+Paper đo Precision / Recall / F1 / Accuracy / AUC cho mọi mô hình. Project có script chạy local để lấy số liệu cho báo cáo:
+
+```powershell
+node backend/scripts/eval-sentiment.js --limit=500
+```
+
+Script:
+
+- Lấy review + analysis đã lưu.
+- Dùng rating-derived label làm pseudo ground truth (theo đúng rule paper Section 4.1).
+- In confusion matrix, per-class P/R/F1, macro-F1, accuracy.
+- Tách 3 phân khúc: ALL, GROQ-based, FALLBACK only — để so chất lượng từng nguồn.
+
+File: `backend/scripts/eval-sentiment.js`.
+
+### 14.7. Class Imbalance Awareness (paper Figure 3)
+
+Paper báo dataset có >80% positive → accuracy đơn thuần dễ đánh lừa. Eval script báo cáo **per-class F1 + macro-F1** thay vì chỉ accuracy. Admin dashboard ưu tiên hiển thị `negative_ratio_recent` và `rating_sentiment_mismatch` để bù bias positive.
+
+### 14.8. Prompt Versioning
+
+Mỗi lần đổi prompt schema, tăng `PROMPT_VERSION`. Hiện tại: `review-sentiment-v2-ensemble-aspects`. Khi admin re-analyze, version mới được lưu → có thể batch re-run tất cả review version cũ trong tương lai.
+
+### 14.9. Đã Áp Dụng Cải Thiện Recommendation
+
+- Tách Cartesian aggregation trong `findBookStats` (subquery `reviews_agg` riêng).
+- Thêm `recency` factor (half-life 365 ngày) vào score.
+- MMR-style diversity penalty: cùng author −0.05, cùng genre −0.03 với item đã chọn.
+- Reasons mở rộng: thêm "Sach moi phat hanh" khi recency cao.
+
+### 14.10. Còn Lại Có Thể Làm Phase Sau
+
+- Cron sweep `Reviews` chưa có `analysis` (hiện dùng `setTimeout`, mất nếu server restart trong 1-2 giây).
+- Frontend hiển thị `aspects` + `ensemble_agreement` + `top_keywords` trong admin dashboard.
+- Cột `last_review_updated` trên `BookInsights` để bắt re-analysis review cũ.
+- Phase 5: export dataset thực tế → fine-tune PhoBERT để so với Groq, theo đúng định hướng paper Section 5.

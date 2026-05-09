@@ -7,5 +7,6 @@ import asyncHandler from '../utils/asyncHandler.js';
 router.post('/', auth, asyncHandler(reviewController.addReview));
 router.get('/book/:book_id', asyncHandler(reviewController.getReviewsByBook));
 router.get('/all', auth, adminAuth, asyncHandler(reviewController.getAllReviews));
+router.post('/:id/analyze', auth, adminAuth, asyncHandler(reviewController.reanalyzeReview));
 
 export default router;
