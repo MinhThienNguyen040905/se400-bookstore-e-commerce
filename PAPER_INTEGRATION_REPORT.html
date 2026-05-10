@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Báo Cáo Tích Hợp Paper Vào Project — Bookstore E-Commerce</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --bg-soft: #f6f8fa;
+    --bg-code: #f6f8fa;
+    --bg-card: #ffffff;
+    --text: #1f2328;
+    --text-soft: #57606a;
+    --border: #d0d7de;
+    --link: #0969da;
+    --link-hover: #0550ae;
+    --accent: #8250df;
+    --accent-soft: #f5f0ff;
+    --green: #1a7f37;
+    --orange: #bf8700;
+    --red: #cf222e;
+    --blue: #0969da;
+    --shadow: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.06);
+  }
+  [data-theme="dark"] {
+    --bg: #0d1117;
+    --bg-soft: #161b22;
+    --bg-code: #161b22;
+    --bg-card: #161b22;
+    --text: #e6edf3;
+    --text-soft: #8b949e;
+    --border: #30363d;
+    --link: #4493f8;
+    --link-hover: #79c0ff;
+    --accent: #bc8cff;
+    --accent-soft: #1d1430;
+    --green: #3fb950;
+    --orange: #d29922;
+    --red: #f85149;
+    --blue: #4493f8;
+    --shadow: 0 1px 3px rgba(0,0,0,0.3);
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.65;
+    transition: background 0.2s, color 0.2s;
+  }
+  .layout {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+  aside.toc {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+    padding: 20px 16px;
+    border-right: 1px solid var(--border);
+    background: var(--bg-soft);
+    font-size: 13.5px;
+  }
+  aside.toc h2 {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-soft);
+    margin: 12px 0 6px;
+    font-weight: 600;
+  }
+  aside.toc ul {
+    list-style: none;
+    padding-left: 0;
+    margin: 0 0 16px;
+  }
+  aside.toc li { margin: 2px 0; }
+  aside.toc a {
+    display: block;
+    padding: 4px 10px;
+    color: var(--text-soft);
+    text-decoration: none;
+    border-radius: 6px;
+    border-left: 2px solid transparent;
+    transition: all 0.15s;
+  }
+  aside.toc a:hover {
+    background: var(--accent-soft);
+    color: var(--accent);
+  }
+  aside.toc a.active {
+    color: var(--accent);
+    border-left-color: var(--accent);
+    background: var(--accent-soft);
+    font-weight: 600;
+  }
+  main {
+    padding: 32px 48px 80px;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+  .header-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .header-bar .meta {
+    color: var(--text-soft);
+    font-size: 13px;
+  }
+  button.theme-toggle {
+    background: var(--bg-soft);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 6px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    font-family: inherit;
+    transition: all 0.15s;
+  }
+  button.theme-toggle:hover {
+    background: var(--accent-soft);
+    border-color: var(--accent);
+  }
+  h1 { font-size: 32px; margin: 0 0 8px; font-weight: 700; }
+  h2 {
+    font-size: 24px;
+    margin: 40px 0 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+    font-weight: 600;
+  }
+  h3 { font-size: 19px; margin: 28px 0 12px; font-weight: 600; }
+  h4 { font-size: 16px; margin: 20px 0 8px; font-weight: 600; }
+  p { margin: 12px 0; }
+  a { color: var(--link); text-decoration: none; }
+  a:hover { color: var(--link-hover); text-decoration: underline; }
+  code {
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.9em;
+  }
+  pre {
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    overflow-x: auto;
+    margin: 14px 0;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  pre code { background: transparent; border: none; padding: 0; font-size: inherit; }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 16px 0;
+    font-size: 14px;
+    box-shadow: var(--shadow);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  th, td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; vertical-align: top; }
+  th { background: var(--bg-soft); font-weight: 600; }
+  tr:nth-child(even) td { background: var(--bg-soft); }
+  blockquote {
+    margin: 14px 0;
+    padding: 8px 16px;
+    border-left: 4px solid var(--accent);
+    background: var(--accent-soft);
+    color: var(--text-soft);
+    border-radius: 0 6px 6px 0;
+  }
+  ul, ol { padding-left: 24px; margin: 10px 0; }
+  li { margin: 4px 0; }
+  hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
+  .toc-link-file {
+    color: var(--accent) !important;
+    font-family: ui-monospace, monospace;
+    font-size: 0.92em;
+  }
+  .callout {
+    margin: 14px 0;
+    padding: 12px 16px;
+    background: var(--accent-soft);
+    border-left: 4px solid var(--accent);
+    border-radius: 0 6px 6px 0;
+  }
+  .callout strong { color: var(--accent); }
+  .ascii-diagram {
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    overflow-x: auto;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 12.5px;
+    line-height: 1.35;
+    white-space: pre;
+    margin: 14px 0;
+  }
+  @media (max-width: 900px) {
+    .layout { grid-template-columns: 1fr; }
+    aside.toc { display: none; }
+    main { padding: 20px; }
+  }
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: var(--bg-soft); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 5px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text-soft); }
+</style>
+</head>
+<body>
+<div class="layout">
+  <aside class="toc" id="toc">
+    <h2>Mục lục</h2>
+    <ul>
+      <li><a href="#sec-1">1. Bối cảnh</a></li>
+      <li><a href="#sec-2">2. Bản đồ kiến trúc</a></li>
+      <li><a href="#sec-3">3. Mapping paper → project</a></li>
+      <li><a href="#sec-4">4. Pipeline chi tiết</a></li>
+      <li><a href="#sec-5">5. Pre-processing</a></li>
+      <li><a href="#sec-6">6. Polarity & 3-class</a></li>
+      <li><a href="#sec-7">7. Aspect-level</a></li>
+      <li><a href="#sec-8">8. Ensemble vote ⭐</a></li>
+      <li><a href="#sec-9">9. LLM vs CNN/RNN/BERT</a></li>
+      <li><a href="#sec-10">10. Evaluation metrics</a></li>
+      <li><a href="#sec-11">11. Recommendation</a></li>
+      <li><a href="#sec-12">12. Spam detection</a></li>
+      <li><a href="#sec-13">13. Tiếng Việt support</a></li>
+      <li><a href="#sec-14">14. So sánh paper vs project</a></li>
+      <li><a href="#sec-15">15. Cải tiến vượt paper</a></li>
+      <li><a href="#sec-16">16. Hạn chế còn lại</a></li>
+      <li><a href="#sec-17">17. Hướng tương lai</a></li>
+      <li><a href="#sec-18">18. Phụ lục files</a></li>
+    </ul>
+    <h2>Tài liệu liên quan</h2>
+    <ul>
+      <li><a href="AI_SENTIMENT_RECOMMENDATION_PLAN.md" class="toc-link-file">PLAN.md</a></li>
+      <li><a href="PAPER_INTEGRATION_REPORT.md" class="toc-link-file">REPORT.md</a></li>
+    </ul>
+  </aside>
+
+  <main>
+    <div class="header-bar">
+      <div class="meta">Project SE400 — Bookstore E-Commerce</div>
+      <button class="theme-toggle" id="themeToggle" type="button">🌙 Dark</button>
+    </div>
+
+    <h1>Báo Cáo Tích Hợp Paper Vào Project</h1>
+    <p style="color: var(--text-soft);">
+      Phân tích chi tiết những gì project đã áp dụng từ bài báo
+      <em>Bellar et al. 2024 (Mathematics 12, 2403)</em>, gồm kiến trúc,
+      luồng hoạt động, mapping khái niệm → file, và các cải tiến vượt phạm vi paper.
+    </p>
+
+    <hr>
+
+    <h2 id="sec-1">1. Bối Cảnh</h2>
+    <h3>Paper nguồn</h3>
+    <ul>
+      <li><strong>Tên:</strong> <em>"Sentiment Analysis: Predicting Product Reviews for E-Commerce Recommendations Using Deep Learning and Transformers"</em></li>
+      <li><strong>Tác giả:</strong> Oumaima Bellar, Amine Baina, Mostafa Ballafkih</li>
+      <li><strong>Tạp chí:</strong> Mathematics 2024, 12, 2403 (MDPI)</li>
+      <li><strong>Đóng góp chính:</strong> benchmark CNN / RNN / Bi-LSTM / BERT / RoBERTa / ALBERT trên dataset Women's Clothing Reviews; chứng minh <strong>ensemble (CNN+RNN+Bi-LSTM) thắng mọi mô hình đơn lẻ</strong> với accuracy 96.2% (3-class).</li>
+    </ul>
+
+    <h3>Project</h3>
+    <ul>
+      <li><strong>Domain:</strong> bookstore e-commerce (sản xuất, không phải research lab).</li>
+      <li><strong>Stack:</strong> Node.js + Express + Sequelize + MySQL backend, React + Vite + TypeScript frontend.</li>
+      <li><strong>Provider AI:</strong> Groq Cloud (LLaMA 3.1 8B / 3.3 70B) — chọn LLM thay vì train CNN/RNN/BERT vì lý do production trình bày ở §9.</li>
+    </ul>
+
+    <h3>Mục tiêu áp dụng</h3>
+    <ul>
+      <li>Lấy tinh thần paper (sentiment-aware recommendation) làm trục chính.</li>
+      <li>Bám đúng phương pháp khoa học (3-class, P/R/F1, ensemble, aspect-level) ở những chỗ không xung đột với production constraints.</li>
+      <li>Khi xung đột (ví dụ train BERT vs gọi LLM API), document rõ trade-off.</li>
+    </ul>
+
+    <hr>
+
+    <h2 id="sec-2">2. Bản Đồ Kiến Trúc</h2>
+    <div class="ascii-diagram">┌──────────────────────────────────────────────────────────────────┐
+│                          FRONTEND (React)                          │
+│  BookDetailPage → BookReviews + BookInsightPanel + RecShelf      │
+│  Home           → RecommendationShelf (trending/personalized)      │
+│  AdminDashboard → DashboardTab (ai-insights)                      │
+└─────────────────────────────┬────────────────────────────────────┘
+                              │ HTTP (axios)
+┌─────────────────────────────▼────────────────────────────────────┐
+│                       EXPRESS ROUTES                              │
+│  /api/reviews          /api/books/:id/insights                    │
+│  /api/recommendations  /api/admin/stats/ai-insights               │
+└─────────────────────────────┬────────────────────────────────────┘
+                              │
+┌─────────────────────────────▼────────────────────────────────────┐
+│                          SERVICES                                 │
+│  reviewService → reviewAnalysisService (ensemble)                 │
+│  bookService   → bookInsightService (cache + Groq summary)        │
+│  recommendationService (score blend + diversity)                  │
+│  statsService  → AI insights (window, trend, keywords)            │
+└─────────────────────────────┬────────────────────────────────────┘
+                              │
+┌─────────────────────────────▼────────────────────────────────────┐
+│                        AI LAYER                                   │
+│  groqClient ─ JSON completion với timeout + abort                 │
+│  ensembleVote ─ vote Groq + rule + rating                         │
+│  fallbackSentiment ─ rule-based VN keyword                        │
+│  sanitize ─ PII strip + normalize text                            │
+│  jsonParser ─ safe parse với code-fence fallback                  │
+└─────────────────────────────┬────────────────────────────────────┘
+                              │
+┌─────────────────────────────▼────────────────────────────────────┐
+│                      DATA LAYER (MySQL)                           │
+│  Reviews ── ReviewAnalyses (1-1)                                  │
+│  Books ──── BookInsights (1-1, cache)                             │
+│  Orders, Wishlists, BookGenres, BookAuthors (recommendation)      │
+└──────────────────────────────────────────────────────────────────┘</div>
+
+    <h3>Liệt kê file AI core</h3>
+    <table>
+      <thead><tr><th>File</th><th>Vai trò</th></tr></thead>
+      <tbody>
+        <tr><td><a href="backend/services/ai/groqClient.js"><code>groqClient.js</code></a></td><td>HTTP client gọi Groq, env flag <code>AI_FEATURES_ENABLED</code>, timeout, JSON mode</td></tr>
+        <tr><td><a href="backend/services/ai/jsonParser.js"><code>jsonParser.js</code></a></td><td>Parse JSON an toàn (strip code-fence, substring fallback)</td></tr>
+        <tr><td><a href="backend/services/ai/sanitize.js"><code>sanitize.js</code></a></td><td><code>sanitizePii</code> + <code>normalizeText</code> (canonicalization theo paper §3.2)</td></tr>
+        <tr><td><a href="backend/services/ai/fallbackSentiment.js"><code>fallbackSentiment.js</code></a></td><td>Rule-based sentiment + spam detection cho tiếng Việt</td></tr>
+        <tr><td><a href="backend/services/ai/ensembleVote.js"><code>ensembleVote.js</code></a></td><td>Vote 3 nguồn (Groq + rule + rating) — paper §4.4</td></tr>
+        <tr><td><a href="backend/services/ai/reviewAnalysisService.js"><code>reviewAnalysisService.js</code></a></td><td>Orchestrator phân tích từng review</td></tr>
+        <tr><td><a href="backend/services/ai/bookInsightService.js"><code>bookInsightService.js</code></a></td><td>Tổng hợp review thành insight cho trang sách + cache</td></tr>
+        <tr><td><a href="backend/services/recommendationService.js"><code>recommendationService.js</code></a></td><td>Score blend + MMR diversity</td></tr>
+        <tr><td><a href="backend/scripts/eval-sentiment.js"><code>eval-sentiment.js</code></a></td><td>Eval P/R/F1/macro-F1 — paper §4</td></tr>
+      </tbody>
+    </table>
+
+    <hr>
+
+    <h2 id="sec-3">3. Mapping Khái Niệm Paper → Project</h2>
+    <table>
+      <thead><tr><th>Khái niệm trong paper</th><th>Section</th><th>Implementation trong project</th></tr></thead>
+      <tbody>
+        <tr><td>Canonicalization (lowercase, NFC, strip stopwords)</td><td>§3.2</td><td><code>normalizeText()</code> ở <a href="backend/services/ai/sanitize.js">sanitize.js</a></td></tr>
+        <tr><td>Polarity score [-1, 1] (TextBlob style)</td><td>§3.3</td><td>Cột <code>sentiment_score DECIMAL(5,4)</code> ở <code>ReviewAnalyses</code></td></tr>
+        <tr><td>3-class (positive/neutral/negative)</td><td>§4.3</td><td><code>sentiment_label VARCHAR(20)</code></td></tr>
+        <tr><td>Document + aspect level</td><td>§2.1</td><td><code>sentiment_label</code> + <code>aspects JSON</code> (5 keys cố định)</td></tr>
+        <tr><td>Word embeddings (Word2Vec/FastText/BERT)</td><td>§3.4</td><td>Thay bằng LLM Groq — trade-off ở §9</td></tr>
+        <tr><td>CNN / RNN / Bi-LSTM</td><td>§3.5</td><td>LLM thay thế. Rule-based làm baseline.</td></tr>
+        <tr><td><strong>Ensemble CNN+RNN+Bi-LSTM (best)</strong></td><td>§4.4</td><td><a href="backend/services/ai/ensembleVote.js">ensembleVote.js</a>: Groq (0.5) + rule (0.2) + rating (0.3)</td></tr>
+        <tr><td>P / R / F1 / Accuracy / AUC</td><td>§3.7, §4</td><td><a href="backend/scripts/eval-sentiment.js">eval-sentiment.js</a></td></tr>
+        <tr><td>Recommendation tích hợp sentiment</td><td>§2.2, §4.4</td><td><code>recommendationService.scoreBooks</code> (sentiment 18%)</td></tr>
+        <tr><td>Spam detection (limitation)</td><td>§5</td><td><code>spam_risk</code> + <code>spam_reasons</code></td></tr>
+        <tr><td>Vietnamese support (limitation)</td><td>§5</td><td>Prompt explicit + rule VN + NFC normalize</td></tr>
+        <tr><td>Class imbalance (>80% positive)</td><td>Figure 3</td><td>Macro-F1 trong eval; ưu tiên <code>negative_ratio_recent</code></td></tr>
+      </tbody>
+    </table>
+
+    <hr>
+
+    <h2 id="sec-4">4. Pipeline Chi Tiết</h2>
+
+    <h3>4.1. Flow A — Tạo review → Sentiment Analysis</h3>
+    <div class="ascii-diagram">User submits review
+    │
+    ▼
+POST /api/reviews
+    │
+    ▼
+reviewService.addReview()
+  ├─ verify user đã mua (status=DELIVERED)
+  ├─ Review.create() ──────────────────► (1) lưu review NGAY (không chờ AI)
+  ├─ bookInsightService.invalidateBookInsights(bookId)
+  └─ reviewAnalysisService.queueReviewAnalysis(reviewId) ─► async (setTimeout 0)
+    │
+    ▼ (background, không block response)
+analyzeAndStoreReview(reviewId)
+    │
+    ▼
+sanitize comment ─► sanitizePii (email, URL, phone, card)
+    │              └─► normalizeText (NFC, dồn whitespace, giảm lặp)
+    ▼
+fallbackAnalyzeReview(rating, comment)  ──► always run (rule baseline)
+    │
+    ▼
+[if AI_ENABLED && GROQ_KEY]
+analyzeWithGroq(prompt với aspect schema + Vietnamese)
+    │ (timeout 15s, abort nếu lỗi)
+    │
+    ▼
+ensembleVote(groq, rule, rating)
+    ├─ tally weighted votes
+    ├─ winner_label
+    └─ agreement = winner_weight / total_weight
+    │
+    ▼
+ensembleScore(groq, rule, rating) ─► weighted avg sentiment_score
+    │
+    ▼
+upsertReviewAnalysis (lưu tất cả: aspects, ensemble_*, signals, spam, raw_meta)</div>
+
+    <div class="callout">
+      <strong>Đặc điểm quan trọng:</strong>
+      <ul>
+        <li>Review lưu thành công kể cả khi AI tắt hoặc Groq lỗi.</li>
+        <li>Rule-based <em>luôn</em> chạy → có nguồn dự phòng và đóng vai trò "Naive Bayes baseline" trong ensemble.</li>
+        <li>Groq optional → khi tắt, ensemble vẫn có rule + rating.</li>
+        <li><code>prompt_version</code> audit được khi đổi prompt.</li>
+      </ul>
+    </div>
+
+    <h3>4.2. Flow B — Trang chi tiết sách → Insight + Recommendation</h3>
+    <div class="ascii-diagram">User mở /book/:id
+    │
+    ├──► GET /api/books/:id (chi tiết)
+    │
+    ├──► GET /api/books/:id/insights
+    │       │
+    │       ▼
+    │   bookInsightService.getBookInsights({ bookId })
+    │       ├─ Review.count() ─► nếu = 0, trả emptyInsight
+    │       ├─ Review.findOne(latest updatedAt) ─► dùng làm cache key
+    │       ├─ BookInsight.findOne({ review_count, updatedAt >= latest })
+    │       │   └─ HIT ─► trả ngay (không gọi Groq)
+    │       │   MISS ─►
+    │       ├─ findAnalyzedReviews(bookId)
+    │       ├─ buildFallbackInsight (thống kê signals theo sentiment_label)
+    │       ├─ [if AI] Groq tóm tắt thành summary tiếng Việt
+    │       └─ saveInsight (upsert BookInsights)
+    │
+    └──► GET /api/recommendations/books/:id/similar
+            │
+            ▼
+        recommendationService.getSimilarBooks
+            ├─ findBookStats (subquery aggregation, không Cartesian)
+            ├─ findBookInterestIds (genres + authors của sách)
+            ├─ scoreBooks (rating 28%, sentiment 18%, review 13%, sales 13%, wishlist 9%, interest 9%, recency 10%)
+            └─ applyDiversity (MMR-lite: penalty cùng author -0.05, cùng genre -0.03)</div>
+
+    <h3>4.3. Flow C — Admin Dashboard → AI Insights</h3>
+    <div class="ascii-diagram">Admin GET /api/admin/stats/ai-insights?windowDays=7
+    │
+    ▼
+statsService.getAiInsights({ recentWindowDays: 7 })
+    ├─ Query 1: negative_review_books (+ negative_ratio_recent trong N ngày)
+    ├─ Query 2: rating_sentiment_mismatch (rating ≥4 nhưng sentiment <0)
+    ├─ Query 3: top_positive_genres (AVG sentiment_score DESC)
+    ├─ Query 4: sentiment_trend (line chart by day)
+    ├─ Query 5: top_keywords (aggregate signals trong window)
+    └─ Query 6: suspicious_reviews (spam_risk IN medium/high)</div>
+
+    <pre><code>{
+  "window_days": 7,
+  "negative_review_books": [
+    { "book_id": 12, "title": "...", "negative_ratio_recent": 0.35, ... }
+  ],
+  "rating_sentiment_mismatch": [...],
+  "top_positive_genres": [...],
+  "sentiment_trend": [
+    { "day": "2026-05-03", "positive": 12, "neutral": 3, "negative": 1 }
+  ],
+  "top_keywords": [
+    { "keyword": "noi dung hay", "count": 14, "positive": 12, "neutral": 1, "negative": 1 }
+  ],
+  "suspicious_reviews": [...]
+}</code></pre>
+
+    <h3>4.4. Flow D — Admin Re-analyze</h3>
+    <div class="ascii-diagram">Admin nhấn "Phân tích lại" review #N
+    │
+    ▼
+POST /api/reviews/:id/analyze (auth + adminAuth)
+    │
+    ▼
+reviewService.reanalyzeReview({ reviewId })
+    ├─ analyzeAndStoreReview(reviewId) ─► chạy lại đầy đủ pipeline §4.1
+    └─ bookInsightService.invalidateBookInsights(bookId)
+    │
+    ▼
+Response { sentiment_label, sentiment_score, ensemble_agreement, provider }</div>
+
+    <h3>4.5. Flow E — Eval Pipeline</h3>
+    <div class="ascii-diagram">node backend/scripts/eval-sentiment.js --limit=500
+    │
+    ▼
+SELECT r.rating, ra.sentiment_label AS predicted, ra.provider FROM ...
+    │
+    ▼
+ratingToLabel(rating) ─► pseudo ground truth (đúng paper §4.1)
+    │
+    ▼
+buildConfusionMatrix() ─► 3×3 matrix
+    │
+    ▼
+perClassMetrics() ─► P, R, F1 cho từng class
+    │
+    ▼
+Output 3 sections: ALL / GROQ-based / FALLBACK only</div>
+
+    <hr>
+
+    <h2 id="sec-5">5. Pre-processing & Sanitization (Paper §3.2)</h2>
+    <blockquote><em>"Canonicalization, a process that involves converting text to lowercase, stripping leading and trailing spaces, digits, punctuation, and stop words... Following this, tokenization... and lemmatization..."</em></blockquote>
+
+    <table>
+      <thead><tr><th>Bước paper</th><th>Áp dụng</th><th>Lý do nếu không</th></tr></thead>
+      <tbody>
+        <tr><td>Lowercase</td><td>❌</td><td>LLM xử lý case OK, lowercase mất thông tin (tên riêng)</td></tr>
+        <tr><td>Strip spaces</td><td>✅ <code>MULTI_WHITESPACE_RE</code></td><td></td></tr>
+        <tr><td>Strip digits</td><td>❌</td><td>Số có nghĩa (rating, giá)</td></tr>
+        <tr><td>Strip punctuation</td><td>⚠️ Giảm lặp <code>!!!!!! → !!</code></td><td>Punctuation gốc có nghĩa với LLM</td></tr>
+        <tr><td>Strip stopwords</td><td>❌</td><td>Stopwords có ích cho LLM hiểu ngữ cảnh</td></tr>
+        <tr><td>Tokenization</td><td>❌</td><td>LLM tự token hóa</td></tr>
+        <tr><td>Lemmatization</td><td>❌</td><td>Tiếng Việt không inflection nhiều</td></tr>
+        <tr><td><strong>Unicode NFC</strong></td><td>✅</td><td>Tiếng Việt có nhiều cách compose dấu</td></tr>
+        <tr><td><strong>Strip zero-width</strong></td><td>✅</td><td>Bảo mật, tránh hidden tokens</td></tr>
+        <tr><td><strong>Giảm ký tự lặp</strong> <code>aaaaaaaa → aaa</code></td><td>✅</td><td>Teencode/spam</td></tr>
+      </tbody>
+    </table>
+
+    <p><strong>Bổ sung — PII sanitize:</strong></p>
+    <pre><code>EMAIL_RE → '[email]'
+URL_RE   → '[url]'
+PHONE_RE → '[phone]'    // VN format: +84, 0xx
+CREDIT_CARD_RE → '[card]'</code></pre>
+
+    <hr>
+
+    <h2 id="sec-6">6. Polarity & 3-Class Setup (Paper §3.3, §4.1)</h2>
+    <p>Paper Section 4.1 chứng minh 3-class &gt; 5-class (RNN-Word2Vec F1 89.78% vs 84.47%).</p>
+    <ul>
+      <li><code>sentiment_score DECIMAL(5, 4)</code> clamp ∈ [-1, 1]</li>
+      <li><code>sentiment_label</code> chỉ lưu 3 giá trị</li>
+    </ul>
+    <pre><code>ensembleScore = (groq*0.5 + rule*0.2 + rating_label*0.3) / totalWeight</code></pre>
+
+    <hr>
+
+    <h2 id="sec-7">7. Aspect-Level Sentiment (Paper §2.1)</h2>
+    <blockquote><em>"Sentiment analysis extraction operates at three levels: sentence level, document level, and aspect or feature level."</em></blockquote>
+
+    <h3>Schema cố định 5 aspects</h3>
+    <table>
+      <thead><tr><th>Aspect key</th><th>Ý nghĩa</th></tr></thead>
+      <tbody>
+        <tr><td><code>content_quality</code></td><td>Nội dung sách</td></tr>
+        <tr><td><code>translation</code></td><td>Chất lượng dịch</td></tr>
+        <tr><td><code>print_quality</code></td><td>Chất lượng in / giấy / bìa</td></tr>
+        <tr><td><code>shipping</code></td><td>Giao hàng / đóng gói</td></tr>
+        <tr><td><code>price_value</code></td><td>Giá trị so với giá tiền</td></tr>
+      </tbody>
+    </table>
+    <p>Mỗi aspect: <code>positive | neutral | negative | none</code>. <code>none</code> quan trọng — không bịa giá trị.</p>
+
+    <div class="callout">
+      <strong>Use case mở khóa:</strong> <em>"Book B rating 4.7 nhưng chất lượng in xấu"</em> →
+      <code>WHERE avg_rating &gt;= 4.5 AND aspects.print_quality = 'negative'</code>
+    </div>
+
+    <hr>
+
+    <h2 id="sec-8">8. Ensemble Vote (Paper §4.4) ⭐</h2>
+    <table>
+      <thead><tr><th>Model</th><th>F-Score</th><th>Accuracy</th></tr></thead>
+      <tbody>
+        <tr><td>RNN-Word2Vec</td><td>89.78%</td><td>94.85%</td></tr>
+        <tr style="background: var(--accent-soft);"><td><strong>CNN+RNN+Bi-LSTM</strong></td><td><strong>91.3%</strong></td><td><strong>96.2%</strong></td></tr>
+      </tbody>
+    </table>
+
+    <table>
+      <thead><tr><th>Source</th><th>Trọng số</th><th>Mô tả</th></tr></thead>
+      <tbody>
+        <tr><td><code>groq</code></td><td>0.5</td><td>LLM context-aware, hiểu sarcasm/teencode</td></tr>
+        <tr><td><code>rule</code></td><td>0.2</td><td>Rule-based VN keyword + rating-derived</td></tr>
+        <tr><td><code>rating</code></td><td>0.3</td><td>Rating người dùng (1-5 → label)</td></tr>
+      </tbody>
+    </table>
+
+    <pre><code>counts = { positive: 0, neutral: 0, negative: 0 }
+for each vote: counts[vote.label] += vote.weight
+winner = argmax(counts)
+agreement = counts[winner] / sum(counts)</code></pre>
+
+    <pre><code>{
+  "sentiment_label": "positive",
+  "sentiment_score": 0.78,
+  "ensemble_agreement": 0.85,
+  "ensemble_sources": {
+    "groq": "positive",
+    "rule": "positive",
+    "rating": "positive"
+  }
+}</code></pre>
+
+    <div class="callout">
+      <strong>Tại sao ensemble giúp:</strong>
+      <ul>
+        <li>Khi Groq lỗi → vẫn ra label nhờ rule + rating.</li>
+        <li>Khi Groq sai do sarcasm → rating "kéo về" sự thật.</li>
+        <li><code>agreement &lt; 0.6</code> = tín hiệu admin re-check.</li>
+      </ul>
+    </div>
+
+    <hr>
+
+    <h2 id="sec-9">9. Tại Sao LLM Thay Vì CNN/RNN/BERT</h2>
+    <table>
+      <thead><tr><th>Tiêu chí</th><th>Train CNN/RNN/BERT (paper)</th><th>LLM Groq API (project)</th></tr></thead>
+      <tbody>
+        <tr><td>Setup</td><td>Cần dataset ≥10k</td><td>Không cần dataset</td></tr>
+        <tr><td>Tiếng Việt</td><td>Cần PhoBERT</td><td>LLaMA hỗ trợ ngay</td></tr>
+        <tr><td>Aspect schema mở rộng</td><td>Train lại</td><td>Đổi prompt</td></tr>
+        <tr><td>Latency</td><td>&lt;50ms</td><td>~500-2000ms</td></tr>
+        <tr><td>Chi phí</td><td>GPU train + serve</td><td>Per-token</td></tr>
+        <tr><td>Versioning</td><td>Model artifact</td><td><code>prompt_version</code></td></tr>
+        <tr><td>Sarcasm/context</td><td>Hạn chế</td><td>Tốt sẵn</td></tr>
+      </tbody>
+    </table>
+
+    <hr>
+
+    <h2 id="sec-10">10. Evaluation Metrics (Paper §3.7, §4)</h2>
+    <p>Pseudo ground truth: <code>rating ≥4 → positive</code>, <code>=3 → neutral</code>, <code>≤2 → negative</code> (đúng paper §4.1).</p>
+
+    <pre><code>========== ALL providers (487) ==========
+
+=== Confusion Matrix ===
+truth\pred   positive    neutral     negative
+positive     312         18          7
+neutral      11          42          6
+negative     4           8           79
+
+=== Per-class metrics ===
+positive   P=95.41% R=92.58% F1=93.97% support=337
+neutral    P=61.76% R=71.19% F1=66.14% support=59
+negative   P=85.87% R=86.81% F1=86.34% support=91
+
+=== Aggregate ===
+Samples : 487
+Accuracy: 88.50%
+Macro-F1: 82.15%</code></pre>
+
+    <div class="callout">
+      <strong>Tại sao macro-F1 quan trọng?</strong>
+      Paper Figure 3: dataset có &gt;80% positive. Accuracy đơn thuần dễ đánh lừa — model luôn predict <code>positive</code> cũng đạt ~80%. Macro-F1 phạt đúng hành vi này.
+    </div>
+
+    <hr>
+
+    <h2 id="sec-11">11. Sentiment-Aware Recommendation</h2>
+    <pre><code>score = 0.28 * normalized_average_rating
+      + 0.18 * normalized_positive_sentiment
+      + 0.13 * normalized_review_count
+      + 0.13 * normalized_sales_count
+      + 0.09 * normalized_wishlist_count
+      + 0.09 * user_interest_match
+      + 0.10 * normalized_recency</code></pre>
+
+    <h3>Diversity (MMR-lite)</h3>
+    <pre><code>for each picked book:
+  if next_candidate cùng author → -0.05 score
+  if next_candidate cùng genre → -0.03 score</code></pre>
+
+    <hr>
+
+    <h2 id="sec-12">12. Spam Detection (Paper §5 Limitation 1)</h2>
+    <table>
+      <thead><tr><th>Rule</th><th>Lý do</th></tr></thead>
+      <tbody>
+        <tr><td>Comment &lt; 12 ký tự</td><td>Quá ngắn không có nội dung</td></tr>
+        <tr><td>Có URL <code>https://</code></td><td>Quảng cáo</td></tr>
+        <tr><td>Lặp ký tự <code>(.)\1{8,}</code></td><td>"aaaaaaaaaaaa"</td></tr>
+        <tr><td>Mâu thuẫn rating ↔ sentiment</td><td>Rating 5 nhưng comment chê</td></tr>
+      </tbody>
+    </table>
+
+    <hr>
+
+    <h2 id="sec-13">13. Tiếng Việt Support (Paper §5 Limitation 2)</h2>
+    <h3>1. Prompt explicit</h3>
+    <pre><code>You are analyzing a Vietnamese bookstore product review.
+Language: Vietnamese (may include teencode, slang, regional words, mixed English).
+Interpret accordingly. Negation words (khong, chua, chang, "khong tot", "chua hay") flip sentiment.</code></pre>
+
+    <h3>2. Rule-based VN keyword</h3>
+    <p>Danh sách từ tích cực/tiêu cực không dấu, đối phó được khi user gõ không dấu.</p>
+
+    <h3>3. NFC normalization</h3>
+    <p>Dấu tiếng Việt có nhiều cách compose, normalize NFC để match keyword nhất quán.</p>
+
+    <hr>
+
+    <h2 id="sec-14">14. So Sánh Paper vs Project</h2>
+    <table>
+      <thead><tr><th>Khía cạnh</th><th>Paper</th><th>Project</th></tr></thead>
+      <tbody>
+        <tr><td>Mục tiêu</td><td>Benchmark khoa học</td><td>Sản phẩm production</td></tr>
+        <tr><td>Dataset</td><td>22,641 reviews English</td><td>Book reviews thực tế</td></tr>
+        <tr><td>Ngôn ngữ</td><td>English</td><td>Vietnamese</td></tr>
+        <tr><td>Mô hình chính</td><td>CNN/RNN/Bi-LSTM/BERT/RoBERTa</td><td>LLM Groq + rule + rating</td></tr>
+        <tr><td>Ensemble</td><td>CNN+RNN+Bi-LSTM</td><td>Groq+rule+rating</td></tr>
+        <tr><td>Class</td><td>So 3 vs 5</td><td>3-class</td></tr>
+        <tr><td>Aspect</td><td>Đề cập</td><td>Implement 5 aspects</td></tr>
+        <tr><td>Spam</td><td>Limitation</td><td>Implement</td></tr>
+        <tr><td>Recommendation</td><td>Định hướng</td><td>Đầy đủ + MMR diversity</td></tr>
+        <tr><td>Cache/audit</td><td>Không</td><td>Có (BookInsight, prompt_version)</td></tr>
+      </tbody>
+    </table>
+
+    <hr>
+
+    <h2 id="sec-15">15. Cải Tiến Vượt Phạm Vi Paper</h2>
+    <table>
+      <thead><tr><th>#</th><th>Cải tiến</th><th>Lý do</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>Production fallback chain Groq → rule → empty</td><td>Production cần resilience</td></tr>
+        <tr><td>2</td><td>Async pipeline setTimeout queue</td><td>Tạo review không chờ Groq</td></tr>
+        <tr><td>3</td><td>Cache layer BookInsight + invalidation</td><td>Tránh gọi Groq mỗi page view</td></tr>
+        <tr><td>4</td><td>PII sanitize</td><td>Bảo mật user data</td></tr>
+        <tr><td>5</td><td>Aspect schema cố định</td><td>Domain-driven (bookstore)</td></tr>
+        <tr><td>6</td><td>Prompt versioning</td><td>Audit + rollback</td></tr>
+        <tr><td>7</td><td>Diversity MMR-lite</td><td>Tránh recommendation thiên lệch</td></tr>
+        <tr><td>8</td><td>Admin re-analyze endpoint</td><td>Plan §5.1, paper không có</td></tr>
+        <tr><td>9</td><td>Time-window 7d trend, top keywords</td><td>Real-time analytics</td></tr>
+        <tr><td>10</td><td>Rating-sentiment mismatch detection</td><td>Aspect-aware moderation</td></tr>
+        <tr><td>11</td><td>Cartesian-safe SQL</td><td>Bug riêng project</td></tr>
+        <tr><td>12</td><td>Recency factor</td><td>Plan §3.3</td></tr>
+      </tbody>
+    </table>
+
+    <hr>
+
+    <h2 id="sec-16">16. Hạn Chế Còn Lại</h2>
+    <table>
+      <thead><tr><th>#</th><th>Hạn chế</th><th>Cách giải quyết</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td><code>setTimeout(0)</code> mất analysis nếu server crash</td><td>Bull/BullMQ queue hoặc cron sweep</td></tr>
+        <tr><td>2</td><td>FE chưa hiển thị aspects, top_keywords, ensemble_agreement</td><td>Mở rộng UI admin</td></tr>
+        <tr><td>3</td><td>Cache invalidation chưa bắt re-analyze review cũ</td><td>Thêm <code>last_review_updated</code></td></tr>
+        <tr><td>4</td><td>LLM phụ thuộc Groq quota</td><td>Cache + Phase 5 PhoBERT local</td></tr>
+        <tr><td>5</td><td>Eval pseudo ground-truth từ rating</td><td>Gán nhãn manual 200-500 review</td></tr>
+      </tbody>
+    </table>
+
+    <hr>
+
+    <h2 id="sec-17">17. Hướng Phát Triển Tương Lai</h2>
+    <ol>
+      <li><strong>Export dataset</strong> từ DB sau 6+ tháng vận hành.</li>
+      <li><strong>Fine-tune PhoBERT</strong> (paper §5).</li>
+      <li><strong>So sánh 3 nguồn:</strong> PhoBERT vs Groq vs rule.</li>
+      <li><strong>Replicate paper benchmark:</strong> CNN/RNN/Bi-LSTM với Word2Vec.</li>
+      <li><strong>Ensemble nâng cao:</strong> 4 nguồn (Groq + PhoBERT + rule + rating).</li>
+      <li><strong>Aspect mining tự động:</strong> LDA/BERTopic.</li>
+      <li><strong>A/B test recommendation</strong> đo CTR/conversion.</li>
+    </ol>
+
+    <hr>
+
+    <h2 id="sec-18">18. Phụ Lục — Các File Liên Quan</h2>
+
+    <h3>Backend AI</h3>
+    <ul>
+      <li><a href="backend/services/ai/groqClient.js">groqClient.js</a></li>
+      <li><a href="backend/services/ai/jsonParser.js">jsonParser.js</a></li>
+      <li><a href="backend/services/ai/sanitize.js">sanitize.js</a></li>
+      <li><a href="backend/services/ai/fallbackSentiment.js">fallbackSentiment.js</a></li>
+      <li><a href="backend/services/ai/ensembleVote.js">ensembleVote.js</a></li>
+      <li><a href="backend/services/ai/reviewAnalysisService.js">reviewAnalysisService.js</a></li>
+      <li><a href="backend/services/ai/bookInsightService.js">bookInsightService.js</a></li>
+    </ul>
+
+    <h3>Backend Services & Repos</h3>
+    <ul>
+      <li><a href="backend/services/reviewService.js">reviewService.js</a></li>
+      <li><a href="backend/services/recommendationService.js">recommendationService.js</a></li>
+      <li><a href="backend/services/statsService.js">statsService.js</a></li>
+      <li><a href="backend/services/bookService.js">bookService.js</a></li>
+      <li><a href="backend/repositories/reviewRepository.js">reviewRepository.js</a></li>
+      <li><a href="backend/repositories/recommendationRepository.js">recommendationRepository.js</a></li>
+    </ul>
+
+    <h3>Backend Controllers & Routes</h3>
+    <ul>
+      <li><a href="backend/controllers/reviewController.js">reviewController.js</a></li>
+      <li><a href="backend/controllers/recommendationController.js">recommendationController.js</a></li>
+      <li><a href="backend/controllers/statsController.js">statsController.js</a></li>
+      <li><a href="backend/routes/reviews.js">routes/reviews.js</a></li>
+      <li><a href="backend/routes/recommendations.js">routes/recommendations.js</a></li>
+      <li><a href="backend/routes/stats.js">routes/stats.js</a></li>
+      <li><a href="backend/routes/books.js">routes/books.js</a></li>
+    </ul>
+
+    <h3>Models & Migrations</h3>
+    <ul>
+      <li><a href="backend/models/ReviewAnalysis.js">ReviewAnalysis.js</a></li>
+      <li><a href="backend/models/BookInsight.js">BookInsight.js</a></li>
+      <li><a href="backend/migrations/20260507090000-create-review-analyses.cjs">create-review-analyses</a></li>
+      <li><a href="backend/migrations/20260507091000-create-book-insights.cjs">create-book-insights</a></li>
+      <li><a href="backend/migrations/20260507092000-extend-review-analyses.cjs">extend-review-analyses</a></li>
+    </ul>
+
+    <h3>Scripts</h3>
+    <ul>
+      <li><a href="backend/scripts/eval-sentiment.js">eval-sentiment.js</a></li>
+    </ul>
+
+    <h3>Frontend</h3>
+    <ul>
+      <li><a href="frontend/src/api/recommendationApi.ts">recommendationApi.ts</a></li>
+      <li><a href="frontend/src/components/book/BookInsightPanel.tsx">BookInsightPanel.tsx</a></li>
+      <li><a href="frontend/src/components/book/RecommendationShelf.tsx">RecommendationShelf.tsx</a></li>
+      <li><a href="frontend/src/components/book/BookReviews.tsx">BookReviews.tsx</a></li>
+      <li><a href="frontend/src/hooks/useRecommendations.ts">useRecommendations.ts</a></li>
+      <li><a href="frontend/src/types/recommendation.ts">recommendation.ts</a></li>
+      <li><a href="frontend/src/components/admin/tabs/DashboardTab.tsx">DashboardTab.tsx</a></li>
+    </ul>
+
+    <h3>Documentation</h3>
+    <ul>
+      <li><a href="AI_SENTIMENT_RECOMMENDATION_PLAN.md">AI_SENTIMENT_RECOMMENDATION_PLAN.md</a> — kế hoạch + roadmap</li>
+      <li><a href="PAPER_INTEGRATION_REPORT.md">PAPER_INTEGRATION_REPORT.md</a> — phiên bản markdown</li>
+    </ul>
+
+    <hr>
+
+    <p style="text-align: center; color: var(--text-soft); margin-top: 32px;">
+      <em>Project SE400 — Bookstore E-Commerce — 2026</em>
+    </p>
+  </main>
+</div>
+
+<script>
+(function() {
+  const themeToggle = document.getElementById('themeToggle');
+  const stored = localStorage.getItem('paper-report-theme');
+  if (stored === 'dark') {
+    document.documentElement.setAttribute('data-theme', 'dark');
+    themeToggle.textContent = '☀️ Light';
+  }
+  themeToggle.addEventListener('click', () => {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    if (isDark) {
+      document.documentElement.removeAttribute('data-theme');
+      themeToggle.textContent = '🌙 Dark';
+      localStorage.setItem('paper-report-theme', 'light');
+    } else {
+      document.documentElement.setAttribute('data-theme', 'dark');
+      themeToggle.textContent = '☀️ Light';
+      localStorage.setItem('paper-report-theme', 'dark');
+    }
+  });
+
+  const tocLinks = document.querySelectorAll('aside.toc a[href^="#"]');
+  const sections = [];
+  tocLinks.forEach(link => {
+    const id = link.getAttribute('href').slice(1);
+    const el = document.getElementById(id);
+    if (el) sections.push({ id, el, link });
+  });
+  const updateActive = () => {
+    const scrollPos = window.scrollY + 120;
+    let current = sections[0];
+    for (const sec of sections) {
+      if (sec.el.offsetTop <= scrollPos) current = sec;
+    }
+    tocLinks.forEach(l => l.classList.remove('active'));
+    if (current) current.link.classList.add('active');
+  };
+  window.addEventListener('scroll', updateActive, { passive: true });
+  updateActive();
+})();
+</script>
+</body>
+</html>
