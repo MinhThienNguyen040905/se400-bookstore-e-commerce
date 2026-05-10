@@ -1,1 +1,3 @@
 backend/.env
+.codex_pdf_env
+.codex-pdf-venv
