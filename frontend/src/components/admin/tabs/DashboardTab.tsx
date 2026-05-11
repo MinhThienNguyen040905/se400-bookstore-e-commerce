@@ -1,12 +1,12 @@
 // src/components/admin/tabs/DashboardTab.tsx
 import { useAdminAiInsights, useAdminStats } from '@/hooks/useAdmin';
-import { AlertTriangle, Brain, DollarSign, UserPlus, ShoppingBag, TrendingUp, PackageOpen, MoreVertical, Loader2 } from 'lucide-react';
+import { AlertTriangle, Brain, DollarSign, UserPlus, ShoppingBag, TrendingUp, PackageOpen, MoreVertical, Loader2, ScaleIcon, Tags, LineChart } from 'lucide-react';
 import { format } from 'date-fns';
 // Import Recharts
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Line, LineChart as ReLineChart } from 'recharts';
 // Import formatPrice util
 import { formatPrice } from '@/lib/utils';
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 
 interface StatCardProps {
     title: string;
@@ -35,7 +35,8 @@ interface OrderRow {
 
 export function DashboardTab() {
     const { data: stats, isLoading, isError } = useAdminStats();
-    const { data: aiInsights } = useAdminAiInsights();
+    const [windowDays, setWindowDays] = useState(7);
+    const { data: aiInsights, isFetching: aiLoading } = useAdminAiInsights(windowDays);
 
     if (isLoading) {
         return (
@@ -171,59 +172,206 @@ export function DashboardTab() {
                 </div>
             </div>
 
+            {/* ============== AI INSIGHTS SECTION ============== */}
+            {/* Section header + window selector */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-2">
+                <div className="flex items-center gap-2">
+                    <Brain className="w-6 h-6 text-[#00796B]" />
+                    <h2 className="text-xl font-bold font-display text-stone-900">AI Review Insights</h2>
+                    {aiLoading && <Loader2 className="w-4 h-4 animate-spin text-stone-400" />}
+                </div>
+                <div className="flex items-center gap-2 text-xs font-bold">
+                    <span className="text-stone-500">Window:</span>
+                    {[7, 14, 30].map((d) => (
+                        <button
+                            key={d}
+                            onClick={() => setWindowDays(d)}
+                            className={`rounded-full px-3 py-1 transition-colors ${
+                                windowDays === d
+                                    ? 'bg-[#00796B] text-white shadow-sm'
+                                    : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+                            }`}
+                        >
+                            {d}d
+                        </button>
+                    ))}
+                </div>
+            </div>
+
             {aiInsights && (
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div className="rounded-xl border border-stone-200 bg-white p-6 shadow-sm lg:col-span-2">
+                <>
+                    {/* Row 1: Sentiment trend (full width, chart) */}
+                    <div className="rounded-xl border border-stone-200 bg-white p-6 shadow-sm">
                         <div className="flex items-center gap-2 mb-4">
-                            <Brain className="w-5 h-5 text-[#00796B]" />
-                            <h3 className="text-stone-900 font-bold">AI Review Insights</h3>
+                            <LineChart className="w-5 h-5 text-[#00796B]" />
+                            <h3 className="text-stone-900 font-bold">Sentiment trend ({aiInsights.window_days} days)</h3>
                         </div>
-                        <div className="grid sm:grid-cols-2 gap-4">
-                            <InsightMiniList
-                                title="Books needing attention"
-                                empty="No negative sentiment pattern yet"
-                                items={aiInsights.negative_review_books.map((book) => ({
-                                    key: book.book_id,
-                                    label: book.title,
-                                    value: `${book.negative_reviews}/${book.analyzed_reviews} negative`
-                                }))}
-                            />
-                            <InsightMiniList
-                                title="Top positive genres"
-                                empty="No analyzed genre data yet"
-                                items={aiInsights.top_positive_genres.map((genre) => ({
-                                    key: genre.genre_id,
-                                    label: genre.name,
-                                    value: `Sentiment ${genre.avg_sentiment}`
-                                }))}
-                            />
+                        <div className="w-full h-[260px]">
+                            {aiInsights.sentiment_trend.length > 0 ? (
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <ReLineChart data={aiInsights.sentiment_trend} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
+                                        <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                                        <XAxis dataKey="day" tick={{ fill: '#6B7280', fontSize: 11 }} />
+                                        <YAxis tick={{ fill: '#6B7280', fontSize: 11 }} allowDecimals={false} />
+                                        <Tooltip contentStyle={{ borderRadius: '8px', border: '1px solid #E5E7EB' }} />
+                                        <Legend />
+                                        <Line type="monotone" dataKey="positive" stroke="#16a34a" strokeWidth={2} dot={{ r: 3 }} />
+                                        <Line type="monotone" dataKey="neutral" stroke="#78716c" strokeWidth={2} dot={{ r: 3 }} />
+                                        <Line type="monotone" dataKey="negative" stroke="#dc2626" strokeWidth={2} dot={{ r: 3 }} />
+                                    </ReLineChart>
+                                </ResponsiveContainer>
+                            ) : (
+                                <div className="h-full flex items-center justify-center text-sm text-stone-400">
+                                    Chưa có dữ liệu trend trong window này.
+                                </div>
+                            )}
                         </div>
                     </div>
 
-                    <div className="rounded-xl border border-stone-200 bg-white p-6 shadow-sm">
-                        <div className="flex items-center gap-2 mb-4">
-                            <AlertTriangle className="w-5 h-5 text-amber-600" />
-                            <h3 className="text-stone-900 font-bold">Suspicious Reviews</h3>
-                        </div>
-                        {aiInsights.suspicious_reviews.length > 0 ? (
-                            <div className="space-y-3">
-                                {aiInsights.suspicious_reviews.slice(0, 4).map((review) => (
-                                    <div key={review.review_id} className="border-b border-stone-100 pb-3 last:border-0">
-                                        <p className="text-sm font-semibold text-stone-800 truncate">
-                                            {review.book?.title || 'Unknown book'}
-                                        </p>
-                                        <p className="text-xs text-stone-500 truncate">{review.comment}</p>
-                                        <span className="mt-1 inline-flex rounded-full bg-amber-50 px-2 py-0.5 text-xs font-bold text-amber-700 capitalize">
-                                            {review.spam_risk}
-                                        </span>
-                                    </div>
-                                ))}
+                    {/* Row 2: Books needing attention + Rating-Sentiment Mismatch */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        {/* Negative trend books */}
+                        <div className="rounded-xl border border-stone-200 bg-white p-6 shadow-sm">
+                            <div className="flex items-center gap-2 mb-4">
+                                <AlertTriangle className="w-5 h-5 text-red-600" />
+                                <h3 className="text-stone-900 font-bold">Books needing attention</h3>
+                                <span className="ml-auto text-xs text-stone-400">recent {aiInsights.window_days}d</span>
                             </div>
-                        ) : (
-                            <p className="text-sm text-stone-500">No suspicious reviews detected.</p>
-                        )}
+                            {aiInsights.negative_review_books.length > 0 ? (
+                                <div className="space-y-2">
+                                    {aiInsights.negative_review_books.slice(0, 6).map((book) => (
+                                        <div key={book.book_id} className="flex items-center gap-3 rounded-lg bg-stone-50 px-3 py-2">
+                                            {book.cover_image && (
+                                                <img src={book.cover_image} alt="" className="w-9 h-12 object-cover rounded shadow-sm" />
+                                            )}
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-sm font-semibold text-stone-800 truncate">{book.title}</p>
+                                                <p className="text-xs text-stone-500">
+                                                    {book.negative_reviews_recent}/{book.analyzed_reviews_recent} negative gần đây
+                                                    <span className="ml-2 text-stone-400">· avg sentiment {book.avg_sentiment}</span>
+                                                </p>
+                                            </div>
+                                            <span className="text-xs font-bold text-red-700 bg-red-50 rounded-full px-2 py-0.5">
+                                                {Math.round(book.negative_ratio_recent * 100)}%
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <p className="text-sm text-stone-500">Không có sách có pattern tiêu cực.</p>
+                            )}
+                        </div>
+
+                        {/* Rating-Sentiment Mismatch — ⭐ minh chứng paper §5 */}
+                        <div className="rounded-xl border border-amber-200 bg-amber-50/30 p-6 shadow-sm">
+                            <div className="flex items-center gap-2 mb-4">
+                                <ScaleIcon className="w-5 h-5 text-amber-600" />
+                                <h3 className="text-stone-900 font-bold">Rating ↔ Sentiment mismatch</h3>
+                                <span className="ml-auto text-[10px] font-bold uppercase tracking-wide text-amber-700 bg-amber-100 rounded-full px-2 py-0.5">
+                                    paper §5
+                                </span>
+                            </div>
+                            <p className="text-xs text-stone-500 mb-3">
+                                Sách rating cao (≥4) nhưng sentiment trung bình âm — dấu hiệu rating giả/mỉa mai.
+                            </p>
+                            {aiInsights.rating_sentiment_mismatch.length > 0 ? (
+                                <div className="space-y-2">
+                                    {aiInsights.rating_sentiment_mismatch.slice(0, 6).map((book) => (
+                                        <div key={book.book_id} className="flex items-center gap-3 rounded-lg bg-white border border-amber-100 px-3 py-2">
+                                            {book.cover_image && (
+                                                <img src={book.cover_image} alt="" className="w-9 h-12 object-cover rounded shadow-sm" />
+                                            )}
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-sm font-semibold text-stone-800 truncate">{book.title}</p>
+                                                <p className="text-xs text-stone-500">
+                                                    {book.analyzed_reviews} reviews
+                                                </p>
+                                            </div>
+                                            <div className="text-xs text-right">
+                                                <div className="font-bold text-green-700">★ {book.avg_rating}</div>
+                                                <div className="font-bold text-red-700">≈ {book.avg_sentiment}</div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <p className="text-sm text-stone-500">Chưa phát hiện mismatch.</p>
+                            )}
+                        </div>
                     </div>
-                </div>
+
+                    {/* Row 3: Top genres + Top keywords + Suspicious */}
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        {/* Top positive genres */}
+                        <div className="rounded-xl border border-stone-200 bg-white p-6 shadow-sm">
+                            <div className="flex items-center gap-2 mb-4">
+                                <TrendingUp className="w-5 h-5 text-green-600" />
+                                <h3 className="text-stone-900 font-bold">Top positive genres</h3>
+                            </div>
+                            <InsightMiniList
+                                empty="Chưa có dữ liệu genre"
+                                items={aiInsights.top_positive_genres.map((g) => ({
+                                    key: g.genre_id,
+                                    label: g.name,
+                                    value: `sentiment ${g.avg_sentiment} · ${g.analyzed_reviews} reviews`,
+                                }))}
+                            />
+                        </div>
+
+                        {/* Top keywords */}
+                        <div className="rounded-xl border border-stone-200 bg-white p-6 shadow-sm">
+                            <div className="flex items-center gap-2 mb-4">
+                                <Tags className="w-5 h-5 text-[#00796B]" />
+                                <h3 className="text-stone-900 font-bold">Top keywords</h3>
+                            </div>
+                            {aiInsights.top_keywords.length > 0 ? (
+                                <div className="space-y-2">
+                                    {aiInsights.top_keywords.slice(0, 8).map((k) => (
+                                        <div key={k.keyword} className="flex items-center gap-2">
+                                            <span className="flex-1 text-sm text-stone-700 truncate font-medium">{k.keyword}</span>
+                                            <KeywordSentimentBar pos={k.positive} neu={k.neutral} neg={k.negative} />
+                                            <span className="text-xs text-stone-400 w-8 text-right">{k.count}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <p className="text-sm text-stone-500">Chưa có keyword nào.</p>
+                            )}
+                        </div>
+
+                        {/* Suspicious reviews */}
+                        <div className="rounded-xl border border-stone-200 bg-white p-6 shadow-sm">
+                            <div className="flex items-center gap-2 mb-4">
+                                <AlertTriangle className="w-5 h-5 text-amber-600" />
+                                <h3 className="text-stone-900 font-bold">Suspicious reviews</h3>
+                            </div>
+                            {aiInsights.suspicious_reviews.length > 0 ? (
+                                <div className="space-y-3">
+                                    {aiInsights.suspicious_reviews.slice(0, 4).map((review) => (
+                                        <div key={review.review_id} className="border-b border-stone-100 pb-3 last:border-0">
+                                            <p className="text-sm font-semibold text-stone-800 truncate">
+                                                {review.book?.title || 'Unknown book'}
+                                            </p>
+                                            <p className="text-xs text-stone-500 truncate italic">"{review.comment}"</p>
+                                            <div className="mt-1 flex items-center gap-1.5 flex-wrap">
+                                                <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${
+                                                    review.spam_risk === 'high' ? 'bg-red-50 text-red-700' : 'bg-amber-50 text-amber-700'
+                                                }`}>
+                                                    {review.spam_risk}
+                                                </span>
+                                                {review.spam_reasons?.slice(0, 2).map((r, i) => (
+                                                    <span key={i} className="text-[10px] text-stone-400">· {r}</span>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <p className="text-sm text-stone-500">Không có review đáng ngờ.</p>
+                            )}
+                        </div>
+                    </div>
+                </>
             )}
 
             {/* RECENT ORDERS TABLE */}
@@ -347,16 +495,16 @@ function InsightMiniList({
     empty,
     items
 }: {
-    title: string;
+    title?: string;
     empty: string;
     items: Array<{ key: number; label: string; value: string }>;
 }) {
     return (
         <div className="space-y-3">
-            <h4 className="text-sm font-bold text-stone-700">{title}</h4>
+            {title && <h4 className="text-sm font-bold text-stone-700">{title}</h4>}
             {items.length > 0 ? (
                 <div className="space-y-2">
-                    {items.slice(0, 4).map((item) => (
+                    {items.slice(0, 5).map((item) => (
                         <div key={item.key} className="rounded-lg bg-stone-50 px-3 py-2">
                             <p className="text-sm font-semibold text-stone-800 truncate">{item.label}</p>
                             <p className="text-xs text-stone-500">{item.value}</p>
@@ -366,6 +514,22 @@ function InsightMiniList({
             ) : (
                 <p className="text-sm text-stone-500">{empty}</p>
             )}
+        </div>
+    );
+}
+
+// Stacked bar nhỏ thể hiện phân bố sentiment của 1 keyword
+function KeywordSentimentBar({ pos, neu, neg }: { pos: number; neu: number; neg: number }) {
+    const total = pos + neu + neg;
+    if (total === 0) return <div className="w-20 h-2 bg-stone-100 rounded" />;
+    const pp = (pos / total) * 100;
+    const np = (neu / total) * 100;
+    const ng = (neg / total) * 100;
+    return (
+        <div className="w-20 h-2 bg-stone-100 rounded overflow-hidden flex" title={`+${pos} /0${neu} /-${neg}`}>
+            <span className="bg-green-500" style={{ width: `${pp}%` }} />
+            <span className="bg-stone-400" style={{ width: `${np}%` }} />
+            <span className="bg-red-500" style={{ width: `${ng}%` }} />
         </div>
     );
 }

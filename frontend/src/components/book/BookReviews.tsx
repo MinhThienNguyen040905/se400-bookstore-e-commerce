@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Star, Send, Loader2, MessageSquare } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
-import type { Review } from '@/types/Review';
+import type { Review, AspectLabel, SentimentLabel } from '@/types/Review';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useAuthStore } from '@/features/auth/useAuthStore';
@@ -28,6 +28,33 @@ const sentimentText = {
     neutral: 'Neutral',
     negative: 'Negative',
 };
+
+const ASPECT_LABELS: Record<keyof NonNullable<Review['analysis']>['aspects'] & string, string> = {
+    content_quality: 'Nội dung',
+    translation: 'Dịch thuật',
+    print_quality: 'Chất lượng in',
+    shipping: 'Giao hàng',
+    price_value: 'Giá trị',
+};
+
+const aspectStyles: Record<AspectLabel, string> = {
+    positive: 'bg-green-50 text-green-700 border-green-200',
+    neutral: 'bg-stone-50 text-stone-600 border-stone-200',
+    negative: 'bg-red-50 text-red-700 border-red-200',
+    none: 'bg-stone-50 text-stone-400 border-stone-100 line-through',
+};
+
+const sourceStyles: Record<SentimentLabel, string> = {
+    positive: 'text-green-700',
+    neutral: 'text-stone-600',
+    negative: 'text-red-700',
+};
+
+const spamStyles = {
+    low: 'bg-stone-100 text-stone-600',
+    medium: 'bg-amber-50 text-amber-700 border border-amber-200',
+    high: 'bg-red-50 text-red-700 border border-red-200',
+} as const;
 
 export function BookReviews({ bookId, reviews, className }: BookReviewsProps) {
     const { user } = useAuthStore();
@@ -255,10 +282,13 @@ export function BookReviews({ bookId, reviews, className }: BookReviewsProps) {
                                         {review.comment}
                                     </p>
                                     {review.analysis?.summary && (
-                                        <p className="text-xs text-stone-500 bg-stone-50 rounded-lg px-3 py-2">
-                                            {review.analysis.summary}
+                                        <p className="text-xs text-stone-500 bg-stone-50 rounded-lg px-3 py-2 italic">
+                                            "{review.analysis.summary}"
                                         </p>
                                     )}
+
+                                    {/* AI analysis details — minh chứng paper §2.1 (aspect) + §4.4 (ensemble) + §5 (spam) */}
+                                    {review.analysis && <AnalysisPanel analysis={review.analysis} />}
                                 </div>
                             </div>
                         ))}
@@ -266,5 +296,116 @@ export function BookReviews({ bookId, reviews, className }: BookReviewsProps) {
                 )}
             </div>
         </section>
+    );
+}
+
+// ---------- AI Analysis Panel ----------
+// Hiển thị aspects, ensemble_agreement, ensemble_sources, spam_risk
+// (đối ứng full output từ ReviewAnalysisService + ensembleVote)
+function AnalysisPanel({ analysis }: { analysis: NonNullable<Review['analysis']> }) {
+    const aspects = analysis.aspects || {};
+    const meaningfulAspects = (Object.entries(aspects) as Array<[string, AspectLabel]>)
+        .filter(([, label]) => label && label !== 'none');
+    const agreement = analysis.ensemble_agreement;
+    const sources = analysis.ensemble_sources;
+    const showSpam = analysis.spam_risk && analysis.spam_risk !== 'low';
+
+    if (!meaningfulAspects.length && agreement == null && !sources && !showSpam && !analysis.signals?.length) {
+        return null;
+    }
+
+    return (
+        <div className="mt-2 space-y-2 rounded-lg border border-stone-100 bg-linear-to-br from-stone-50/60 to-white p-3 text-xs">
+            {/* Aspects */}
+            {meaningfulAspects.length > 0 && (
+                <div className="flex flex-wrap items-center gap-1.5">
+                    <span className="font-bold text-stone-500 mr-1">Aspects:</span>
+                    {meaningfulAspects.map(([key, label]) => (
+                        <span
+                            key={key}
+                            className={cn(
+                                "rounded-full border px-2 py-0.5 font-medium",
+                                aspectStyles[label]
+                            )}
+                        >
+                            {ASPECT_LABELS[key as keyof typeof ASPECT_LABELS] || key}: {label}
+                        </span>
+                    ))}
+                </div>
+            )}
+
+            {/* Signals (keywords) */}
+            {analysis.signals && analysis.signals.length > 0 && (
+                <div className="flex flex-wrap items-center gap-1.5">
+                    <span className="font-bold text-stone-500 mr-1">Signals:</span>
+                    {analysis.signals.slice(0, 6).map((s, i) => (
+                        <span key={i} className="rounded bg-stone-100 px-1.5 py-0.5 text-stone-600">
+                            {s}
+                        </span>
+                    ))}
+                </div>
+            )}
+
+            {/* Ensemble vote */}
+            {(agreement != null || sources) && (
+                <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-bold text-stone-500">Ensemble vote:</span>
+                    {sources && (
+                        <div className="flex items-center gap-1.5">
+                            {(['groq', 'rule', 'rating'] as const).map((key) => {
+                                const lbl = sources[key];
+                                if (!lbl) return (
+                                    <span key={key} className="text-stone-300">
+                                        {key}=<span className="italic">off</span>
+                                    </span>
+                                );
+                                return (
+                                    <span key={key} className="text-stone-500">
+                                        {key}=<span className={cn("font-bold", sourceStyles[lbl])}>{lbl}</span>
+                                    </span>
+                                );
+                            })}
+                        </div>
+                    )}
+                    {agreement != null && (
+                        <span
+                            className={cn(
+                                "ml-auto rounded-full px-2 py-0.5 font-bold",
+                                agreement >= 0.8 ? "bg-green-50 text-green-700"
+                                    : agreement >= 0.6 ? "bg-amber-50 text-amber-700"
+                                        : "bg-red-50 text-red-700"
+                            )}
+                            title={agreement < 0.6 ? "Đồng thuận thấp — admin nên xem lại" : "Đồng thuận cao"}
+                        >
+                            agreement {(agreement * 100).toFixed(0)}%
+                        </span>
+                    )}
+                </div>
+            )}
+
+            {/* Spam */}
+            {showSpam && (
+                <div className="flex flex-wrap items-center gap-2 pt-1">
+                    <span
+                        className={cn(
+                            "rounded-full px-2 py-0.5 font-bold uppercase tracking-wide",
+                            spamStyles[analysis.spam_risk!]
+                        )}
+                    >
+                        spam {analysis.spam_risk}
+                    </span>
+                    {analysis.spam_reasons?.slice(0, 3).map((r, i) => (
+                        <span key={i} className="text-stone-500 italic">· {r}</span>
+                    ))}
+                </div>
+            )}
+
+            {/* Provider */}
+            {analysis.provider && (
+                <div className="text-[10px] text-stone-400 pt-1">
+                    Provider: {analysis.provider}{analysis.model ? ` (${analysis.model})` : ''}
+                </div>
+            )}
+        </div>
     );
 }

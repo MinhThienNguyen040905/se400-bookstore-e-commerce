@@ -60,11 +60,13 @@ URL frontend: `http://localhost:5173` — URL admin: `http://localhost:5173/admi
 
 **Mục đích**: thấy review **positive** với ensemble đồng thuận cao.
 
-- Vào trang sách đã review → mở phần Reviews:
-  - Mỗi review có badge **sentiment** (xanh = positive).
-  - Có `short_summary` AI sinh ra.
-  - `signals`: "noi dung hay", "bia dep", "giao hang nhanh"...
-- Quan trọng: `ensemble_agreement = 1.00` → cả 3 nguồn (Groq + rule + rating) đều đồng thuận.
+- Vào trang sách đã review → mở phần Reviews. Mỗi review giờ hiện rõ:
+  - Badge **sentiment** (xanh = positive)
+  - **Summary** AI tiếng Việt trong khung xám
+  - Hàng **Aspects** chips (vd: `Nội dung: positive`, `Giao hàng: positive`)
+  - Hàng **Signals**: "noi dung hay", "bia dep", "giao hang nhanh"...
+  - Hàng **Ensemble vote**: `groq=positive · rule=positive · rating=positive` + badge `agreement 100%` xanh
+  - Dòng provider: `groq (llama-3.1-8b-instant)`
 
 → Slide 9 (ensemble vote).
 
@@ -88,13 +90,11 @@ URL frontend: `http://localhost:5173` — URL admin: `http://localhost:5173/admi
 **Mục đích**: ⭐ **trọng tâm — chứng minh ensemble vote bảo vệ hệ thống khỏi rating giả/mỉa mai.**
 
 - Review *"Khong tot nhu mong doi..."* nhưng rating **5 sao**:
-  - Groq: `negative`
-  - Rule (keyword "khong tot"): `negative`
-  - Rating-derived: `positive`
-  - **Winner: negative** (weight 0.7 > 0.3)
-  - `ensemble_agreement = 0.5` → flag thấp → admin nên review lại.
-  - `spam_risk = high`, `spam_reasons = ["rating va sentiment mau thuan"]`.
-- Review ngược: rating 1 nhưng comment khen → tương tự ngược chiều.
+  - UI sẽ hiển thị **Ensemble vote**: `groq=negative · rule=negative · rating=positive`
+  - Badge **agreement** màu **vàng/đỏ** (50%) — ngưỡng cảnh báo
+  - Dòng **spam high** + reason "rating va sentiment mau thuan"
+  - Winner cuối: `negative` (weight 0.7 > 0.3)
+- Review ngược (rating 1 nhưng comment khen) → tương tự ngược chiều.
 
 **Câu chuyện kể với giảng viên**:
 > Đây chính là tình huống paper §5 chỉ ra (review giả/mỉa mai). Trong paper, dataset không lọc spam → kết quả bị nhiễu. Project giải quyết bằng **ensemble 3 nguồn** lấy cảm hứng từ paper §4.4 (CNN+RNN+Bi-LSTM ensemble): không tin tuyệt đối vào bất kỳ nguồn nào.
@@ -129,18 +129,26 @@ URL frontend: `http://localhost:5173` — URL admin: `http://localhost:5173/admi
 
 **Mục đích**: trình diễn toàn bộ AI insights — đây là phần "wow" cuối buổi.
 
-Vào `/admin` → tab Dashboard. Endpoint backend: `GET /api/admin/stats/ai-insights?windowDays=7`.
+Vào `/admin` → tab Dashboard. Cuộn xuống section **"AI Review Insights"**.
 
-Sẽ thấy:
+Trên cùng có **Window selector** (7d / 14d / 30d) — click để đổi cửa sổ thời gian → toàn bộ dữ liệu refetch (chứng minh time-window analytics).
 
+Sẽ thấy 3 hàng:
+
+**Hàng 1**: Sentiment trend (line chart) — 3 đường positive/neutral/negative theo ngày trong window.
+
+**Hàng 2** (2 card):
 | Section | Ý nghĩa |
 |---|---|
-| **Negative review books** | Sách có tỉ lệ negative cao trong 7 ngày — `negative_ratio_recent` |
-| **Rating-sentiment mismatch** | Sách `avg_rating ≥ 4` nhưng `avg_sentiment < 0` (use case paper §5) |
+| **Books needing attention** | Sách có tỉ lệ negative cao trong window — kèm cover + ratio % |
+| **Rating ↔ Sentiment mismatch** ⭐ | Sách rating ≥4 nhưng sentiment <0 (use case paper §5). Khung amber, badge `paper §5` |
+
+**Hàng 3** (3 card):
+| Section | Ý nghĩa |
+|---|---|
 | **Top positive genres** | Genre có `AVG(sentiment_score)` cao nhất |
-| **Sentiment trend** | Line chart by day (positive/neutral/negative) — minh chứng *real-time analytics* |
-| **Top keywords** | Signals xuất hiện nhiều, kèm phân bố sentiment |
-| **Suspicious reviews** | Review `spam_risk ∈ {medium, high}` từ user mismatch & spammer |
+| **Top keywords** | Signals xuất hiện nhiều + **stacked bar** xanh/xám/đỏ thể hiện phân bố sentiment từng keyword |
+| **Suspicious reviews** | Review `spam_risk ∈ {medium, high}` + lý do — từ user mismatch & spammer |
 
 **Câu chuyện kể**:
 > Đây là phần vượt phạm vi paper. Paper chỉ benchmark mô hình trên dataset offline. Project mang **time-window analytics + mismatch detection + keyword aggregation** vào production — admin có thể moderate sách/review trong tuần gần đây.

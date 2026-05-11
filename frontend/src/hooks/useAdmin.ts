@@ -16,13 +16,26 @@ export interface User {
 }
 
 export interface AdminAiInsights {
+    window_days: number;
     negative_review_books: Array<{
         book_id: number;
         title: string;
         cover_image: string;
         analyzed_reviews: number;
         negative_reviews: number;
+        analyzed_reviews_recent: number;
+        negative_reviews_recent: number;
+        negative_ratio_recent: number;
         avg_sentiment: number;
+        avg_rating: number;
+    }>;
+    rating_sentiment_mismatch: Array<{
+        book_id: number;
+        title: string;
+        cover_image: string;
+        avg_rating: number;
+        avg_sentiment: number;
+        analyzed_reviews: number;
     }>;
     top_positive_genres: Array<{
         genre_id: number;
@@ -30,10 +43,24 @@ export interface AdminAiInsights {
         analyzed_reviews: number;
         avg_sentiment: number;
     }>;
+    sentiment_trend: Array<{
+        day: string;
+        positive: number;
+        neutral: number;
+        negative: number;
+    }>;
+    top_keywords: Array<{
+        keyword: string;
+        count: number;
+        positive: number;
+        neutral: number;
+        negative: number;
+    }>;
     suspicious_reviews: Array<{
         review_id: number;
         rating: number;
         comment: string;
+        review_date?: string;
         spam_risk: 'medium' | 'high';
         spam_reasons: string[];
         sentiment_label: string;
@@ -49,8 +76,8 @@ const getAdminStats = async (): Promise<DashboardStats> => {
     return data;
 };
 
-const getAdminAiInsights = async (): Promise<AdminAiInsights> => {
-    const { data } = await api.get('/admin/stats/ai-insights');
+const getAdminAiInsights = async (windowDays: number): Promise<AdminAiInsights> => {
+    const { data } = await api.get('/admin/stats/ai-insights', { params: { windowDays } });
     return data;
 };
 
@@ -76,10 +103,10 @@ export const useAdminStats = () => {
     });
 };
 
-export const useAdminAiInsights = () => {
+export const useAdminAiInsights = (windowDays: number = 7) => {
     return useQuery({
-        queryKey: ['admin-ai-insights'],
-        queryFn: getAdminAiInsights,
+        queryKey: ['admin-ai-insights', windowDays],
+        queryFn: () => getAdminAiInsights(windowDays),
         staleTime: 1000 * 60 * 5,
         refetchOnWindowFocus: false,
     });
