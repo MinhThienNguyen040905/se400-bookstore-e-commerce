@@ -125,25 +125,43 @@
 
 ---
 
-## Slide 5 — Mapping Paper → Project (2 phút)
+## Slide 5 — Mapping Paper → Project (2.5 phút)
 
-> *(Chỉ tay theo từng dòng)*
+> *(Mở slide, đứng lùi 1 bước cho audience nhìn toàn bảng trước)*
 >
-> Bảng này em coi là **slide bằng chứng** — chứng minh project không "lấy idea chung chung" mà bám đúng từng section của paper.
+> Đây là slide em coi là **bằng chứng định lượng** — chứng minh project không "lấy ý tưởng chung chung" mà **bám đúng từng section cụ thể** của paper. Cột giữa là số section paper, cột phải là file/cột DB tương ứng trong project. Em xin đi theo **3 nhóm khái niệm** thay vì đọc từng dòng.
 >
-> Ví dụ paper section 3.2 nói về *canonicalization* — chuyển text về dạng chuẩn. Project có function `normalizeText()` trong file `sanitize.js` làm đúng việc đó, em sẽ giải thích chi tiết slide 6.
+> *(Chỉ vào 3 dòng đầu — nhóm "Text & Label")*
 >
-> Paper section 3.3 dùng polarity score trong khoảng −1 đến 1. Project có cột `sentiment_score DECIMAL(5,4)` lưu đúng range đó.
+> **Nhóm 1 — Tiền xử lý và label setup.** Có 3 dòng:
 >
-> Section 4.1 chứng minh 3-class tốt hơn 5-class. Project lưu sentiment_label chỉ 3 giá trị.
+> - Paper **§3.2** nói về *canonicalization* — chuyển text về dạng chuẩn trước khi đưa vào model. Project có function `normalizeText()` trong [sanitize.js](backend/services/ai/sanitize.js) — em sẽ giải thích chi tiết bước nào giữ, bước nào bỏ ở slide 6.
+> - Paper **§3.3** dùng *polarity score* khoảng [−1, 1] kiểu TextBlob. Project lưu cột `sentiment_score DECIMAL(5,4)` ở bảng ReviewAnalyses — clamp đúng range, độ chính xác 4 chữ số sau dấu phẩy.
+> - Paper **§4.1** chứng minh 3-class ổn định hơn 5-class — em đã kể slide trước. Project lưu `sentiment_label` chỉ 3 giá trị `positive | neutral | negative`. Khi cần ground truth từ rating thì map theo đúng công thức paper.
 >
-> Section 2.1 đề cập 3 mức phân tích — document, sentence, aspect. Project triển khai **cả document lẫn aspect-level**, với 5 aspects cố định cho domain bookstore.
+> *(Chỉ vào 4 dòng giữa — nhóm "Models & Methods")*
 >
-> *(Nhấn mạnh dòng ensemble)*
+> **Nhóm 2 — Phương pháp phân tích.** Đây là phần quan trọng nhất:
 >
-> Và quan trọng nhất — section 4.4, finding ensemble — project có file `ensembleVote.js` bỏ phiếu 3 nguồn. Em sẽ kể chi tiết slide 9.
+> - **§2.1 — Document + aspect level.** Paper liệt kê 3 mức: sentence, document, aspect. Project triển khai **cả document lẫn aspect-level** — `sentiment_label` cho toàn review, `aspects JSON` với **5 keys cố định** cho domain bookstore. Slide 8 em sẽ kể tại sao chọn 5 aspects này.
 >
-> Section 5 paper liệt kê các limitation: spam detection và non-English. Project lấp **cả hai** — em sẽ kể slide 15 và slide 13.
+> *(Dừng lại, nhấn mạnh dòng ensemble)*
+>
+> - **§4.4 — Ensemble** — đây là **finding quan trọng nhất** của paper, cũng là phần em đầu tư nhiều nhất. Paper ensemble CNN+RNN+Bi-LSTM đạt 96.2% accuracy. Project có file [ensembleVote.js](backend/services/ai/ensembleVote.js) bỏ phiếu **3 nguồn khác bản chất**: Groq + rule + rating. Slide 9 em sẽ nói chậm phần này.
+> - **§3.7 và §4 — Metrics.** Paper báo cáo Precision, Recall, F1, Accuracy, AUC. Project có script [eval-sentiment.js](backend/scripts/eval-sentiment.js) chạy 1 lệnh ra confusion matrix, per-class P/R/F1, macro-F1. Slide 13 em sẽ demo.
+> - **§2.2 — Sentiment-aware recommendation.** Paper nói tích hợp sentiment cải thiện recommendation nhưng **không đưa công thức cụ thể**. Project xây dựng score blend 7 tín hiệu trong [recommendationService.js](backend/services/recommendationService.js) — sentiment đóng góp **18%**. Slide 12 em sẽ giải thích trọng số.
+>
+> *(Chỉ vào 3 dòng cuối — nhóm "Limitations paper")*
+>
+> **Nhóm 3 — Lấp limitation của paper.** Đây là chỗ em đặc biệt tự hào: paper §5 thừa nhận **3 hạn chế**, project lấp **cả ba**:
+>
+> - **Spam detection** — paper bỏ ngỏ. Project có `spam_risk` 3 mức và `spam_reasons` cụ thể trong [fallbackSentiment.js](backend/services/ai/fallbackSentiment.js). Slide 15.
+> - **Non-English support** — paper chỉ test tiếng Anh, gợi ý PhoBERT cho ngôn ngữ khác. Project xử lý tiếng Việt qua **3 lớp**: prompt khai báo rõ Vietnamese + teencode + negation, rule VN keyword, và NFC normalize.
+> - **Class imbalance** — paper Figure 3 cho thấy dataset có >80% positive. Project **không che giấu** vấn đề này: eval báo cáo **macro-F1** thay vì chỉ accuracy, và admin dashboard ưu tiên hiển thị `negative_ratio_recent` để bù bias.
+>
+> *(Chốt slide)*
+>
+> Tóm lại bảng này có **10 mapping** — không phải mỗi mapping là một code reference cụ thể em có thể mở ra trong demo. Em coi đây là **"slide phòng thủ"**: nếu thầy/cô hỏi "phần X của paper triển khai ở đâu", em luôn quay lại slide này và chỉ thẳng vào file.
 
 ---
 
