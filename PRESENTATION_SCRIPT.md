@@ -65,21 +65,63 @@
 
 ---
 
-## Slide 4 — Kiến Trúc Hệ Thống (1.5 phút)
+## Slide 4 — Kiến Trúc Hệ Thống (2 phút)
 
-> *(Chỉ từ trên xuống dưới theo các tầng)*
+> *(Chỉ vào sơ đồ tổng quát trước khi đi vào từng tầng)*
 >
-> Đây là sơ đồ kiến trúc 5 tầng từ frontend xuống database.
+> Đây là sơ đồ kiến trúc của hệ thống, gồm **5 tầng** xếp từ trên xuống: frontend, routes, services, AI layer, và data. Em xin đi từ trên xuống để thầy/cô thấy **một request đi qua hệ thống như thế nào**.
 >
-> **Frontend** — có 3 màn chính sử dụng AI: trang chi tiết sách hiển thị review + insight panel + similar books, trang chủ có shelf recommendation, và admin dashboard có tab AI insights.
+> *(Chỉ vào tầng Frontend)*
 >
-> **Routes** → **services** — em tách riêng `reviewService` cho luồng review thông thường, và một module `ai/` riêng biệt gồm 6 file: groqClient gọi API, ensembleVote bỏ phiếu, fallbackSentiment dự phòng rule-based, sanitize làm sạch text, jsonParser parse output an toàn, và 2 orchestrator cao hơn.
+> **Tầng 1 — Frontend (React + TypeScript).** Có 3 màn hình chính tiêu thụ AI:
 >
-> *(Chỉ vào tầng data)*
+> - **BookDetailPage** — trang chi tiết sách. Khi user mở sẽ thấy 3 thành phần dùng AI: danh sách review kèm sentiment badge, panel **BookInsight** tóm tắt ý kiến độc giả, và shelf **similar books** gợi ý sách tương tự.
+> - **Home** — trang chủ có **RecommendationShelf** hiển thị sách trending hoặc personalized.
+> - **AdminDashboard** — tab AI Insights cho admin xem trend sentiment, mismatch, top keywords.
 >
-> **Data layer** có 2 bảng quan trọng cho AI: `ReviewAnalyses` lưu kết quả phân tích từng review (1-1 với Review), và `BookInsights` cache kết quả tổng hợp cho từng sách.
+> Frontend **không gọi LLM trực tiếp** — chỉ gọi API backend qua axios. Đây là nguyên tắc bảo mật: API key Groq không bao giờ ra browser.
 >
-> Nguyên tắc quan trọng nhất ở kiến trúc này: **AI là tầng tách rời, không nằm trong critical path**. Tạo review không chờ AI — em sẽ giải thích ở slide 11.
+> *(Chỉ mũi tên xuống "Routes")*
+>
+> **Tầng 2 — Express Routes.** Em mapping 4 endpoint chính theo đúng feature: `/api/reviews` cho CRUD review, `/api/books/:id/insights` cho insight panel, `/api/recommendations` cho recommendation, và `/api/admin/stats/ai-insights` cho admin dashboard. Routes mỏng — chỉ làm 2 việc: validate request và gọi service.
+>
+> *(Chỉ vào tầng Services)*
+>
+> **Tầng 3 — Services (nghiệp vụ).** Mỗi service phụ trách một domain:
+>
+> - **reviewService** — flow tạo/sửa review thông thường, sau khi save mới gọi `reviewAnalysisService` để phân tích **ensemble** (Groq + rule + rating).
+> - **bookService → bookInsightService** — có **cache layer**: nếu insight đã có và review chưa thay đổi thì trả ngay, không gọi Groq lại. Đây là điểm tối ưu chi phí quan trọng.
+> - **recommendationService** — tính điểm sách bằng **score blend** 7 tín hiệu (rating, sentiment, sales, wishlist…) rồi áp **diversity** MMR-lite để tránh top 5 trùng author/genre.
+> - **statsService** — aggregate dữ liệu cho admin: window 7-30 ngày, sentiment trend, top keywords.
+>
+> *(Chỉ vào tầng AI Layer — nhấn mạnh)*
+>
+> **Tầng 4 — AI Layer.** Đây là phần em đầu tư nhiều nhất, gồm **5 file tách bạch trách nhiệm**:
+>
+> - **groqClient** — HTTP client gọi Groq API, có **timeout 15s**, abort signal, và env flag `AI_FEATURES_ENABLED` để **tắt toàn bộ AI** bằng 1 biến môi trường.
+> - **ensembleVote** — bỏ phiếu 3 nguồn, đây là implementation của finding ensemble paper §4.4 mà em sẽ kể chi tiết ở slide 9.
+> - **fallbackSentiment** — rule-based VN keyword, đóng vai trò **baseline luôn chạy** — kể cả khi Groq tắt vẫn có sentiment.
+> - **sanitize** — làm sạch text: NFC, strip PII (email, phone, URL, card), giảm ký tự lặp. Slide 6 em sẽ kể.
+> - **jsonParser** — parse output LLM an toàn, có fallback strip code-fence — chống case Groq trả `\`\`\`json ... \`\`\``.
+>
+> Em đặt cả 5 file này trong folder `backend/services/ai/` riêng biệt — **không trộn vào business logic**, để khi bỏ Groq sang provider khác (OpenAI, PhoBERT local) chỉ cần thay 1 file.
+>
+> *(Chỉ vào tầng Data dưới cùng)*
+>
+> **Tầng 5 — Data Layer (MySQL + Sequelize).** Em thêm 2 bảng mới phục vụ AI:
+>
+> - **ReviewAnalyses (1-1 với Reviews)** — mỗi review có đúng một record phân tích, lưu `sentiment_label`, `sentiment_score`, `aspects` (JSON 5 keys), `ensemble_agreement`, `spam_risk`, `provider`, `prompt_version`. Tách bảng riêng để **audit được model nào trả kết quả nào**.
+> - **BookInsights (1-1 với Books, đóng vai trò cache)** — lưu insight tổng hợp của cả sách, invalidate khi có review mới. Tránh gọi Groq mỗi lần user mở trang.
+>
+> *(Chốt nguyên tắc thiết kế)*
+>
+> Em xin nhấn mạnh **3 nguyên tắc kiến trúc** xuyên suốt sơ đồ này:
+>
+> **Một** — **AI tách khỏi critical path**. Tạo review không chờ AI: response trả 200 trước, AI chạy background qua `setTimeout(0)`. Slide 11 em sẽ giải thích pipeline async cụ thể.
+>
+> **Hai** — **AI là optional**. Bật/tắt bằng env flag, lỗi Groq không làm sập review. Ensemble vẫn cho ra kết quả từ rule + rating.
+>
+> **Ba** — **Cache + audit**. Mọi output AI đều lưu DB kèm `provider`, `model`, `prompt_version` — để sau này đổi prompt có thể batch re-analyze và so sánh.
 
 ---
 
