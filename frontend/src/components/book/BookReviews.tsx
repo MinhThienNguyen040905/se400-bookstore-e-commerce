@@ -229,26 +229,51 @@ export function BookReviews({ bookId, reviews, className }: BookReviewsProps) {
                     </div>
                 ) : (
                     <div className="grid gap-4">
-                        {reviews.map((review) => (
+                        {[...reviews]
+                            .sort((a, b) => {
+                                const aMine = user && a.user?.user_id === user.user_id ? 1 : 0;
+                                const bMine = user && b.user?.user_id === user.user_id ? 1 : 0;
+                                return bMine - aMine;
+                            })
+                            .map((review) => {
+                            const isMine = user ? review.user?.user_id === user.user_id : false;
+                            return (
                             <div
                                 key={review.review_id}
-                                className="group flex gap-4 p-5 bg-white rounded-xl border border-stone-100 shadow-sm transition-all hover:shadow-md hover:border-[#0df2d7]/30"
+                                className={cn(
+                                    "group flex gap-4 p-5 rounded-xl border shadow-sm transition-all hover:shadow-md",
+                                    isMine
+                                        ? "bg-[#00bbb6]/5 border-[#00bbb6]/40 ring-1 ring-[#00bbb6]/20"
+                                        : "bg-white border-stone-100 hover:border-[#0df2d7]/30"
+                                )}
                             >
                                 {/* Avatar */}
                                 <div className="flex-shrink-0">
                                     <img
                                         src={review.user?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(review.user?.name || 'User')}&background=random&color=fff`}
                                         alt={review.user?.name}
-                                        className="w-10 h-10 md:w-12 md:h-12 rounded-full object-cover border-2 border-stone-100 shadow-sm group-hover:border-[#0df2d7]"
+                                        className={cn(
+                                            "w-10 h-10 md:w-12 md:h-12 rounded-full object-cover border-2 shadow-sm",
+                                            isMine
+                                                ? "border-[#00bbb6]"
+                                                : "border-stone-100 group-hover:border-[#0df2d7]"
+                                        )}
                                     />
                                 </div>
 
                                 {/* Content */}
                                 <div className="flex-1 space-y-1.5">
                                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
-                                        <h3 className="font-bold text-stone-900 text-sm md:text-base">
-                                            {review.user?.name || 'Anonymous User'}
-                                        </h3>
+                                        <div className="flex items-center gap-2">
+                                            <h3 className="font-bold text-stone-900 text-sm md:text-base">
+                                                {review.user?.name || 'Anonymous User'}
+                                            </h3>
+                                            {isMine && (
+                                                <span className="inline-flex items-center rounded-full bg-[#00bbb6] text-white text-[10px] font-bold px-2 py-0.5 uppercase tracking-wide">
+                                                    Bạn
+                                                </span>
+                                            )}
+                                        </div>
                                         <time className="text-xs text-stone-400 font-medium">
                                             {format(new Date(review.review_date), 'dd/MM/yyyy HH:mm')}
                                         </time>
@@ -291,7 +316,8 @@ export function BookReviews({ bookId, reviews, className }: BookReviewsProps) {
                                     {review.analysis && <AnalysisPanel analysis={review.analysis} />}
                                 </div>
                             </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 )}
             </div>
